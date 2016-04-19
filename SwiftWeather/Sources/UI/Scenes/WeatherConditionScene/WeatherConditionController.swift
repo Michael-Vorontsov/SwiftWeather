@@ -15,11 +15,6 @@ private let Const = (
     selected : "isSelected",
     current : "isCurrent"
   ),
-//  motionKeys : (
-//    x : "center.x",
-//    y : "center.y",
-//    value : -20
-//  ),
   wallpaperAnimation : (
       interval : 30.0,
       duration : 1.0
@@ -126,7 +121,7 @@ extension WeatherConditionController {
     
     super.viewWillAppear(animated)
     
-//    selectedRegion = resultsController.fetchedObjects?.first as? Region
+    selectedRegion = resultsController.fetchedObjects?.first as? Region
     invalidateUI()
     updateBackgroundImage()
     

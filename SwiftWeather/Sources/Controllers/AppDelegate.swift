@@ -79,8 +79,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, DataPresenter, DataReques
 
 extension AppDelegate {
   func refreshCurrentRegionForecast() {
-    return
-    
     let operation = CurrentLocationOperation()
     dataOperationManager.addOperations([operation]) {[weak self] (success, results, errors) in
       guard true == success, let regionId = results.first as? NSManagedObjectID else {
