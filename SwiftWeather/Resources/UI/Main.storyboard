@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="HXI-X0-lwU">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+    </dependencies>
+    <scenes>
+        <!--Root View Controller-->
+        <scene sceneID="P99-8Z-psN">
+            <objects>
+                <viewController id="HXI-X0-lwU" customClass="RootViewController" customModule="eBayWeather" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="XaH-tl-aEo"/>
+                        <viewControllerLayoutGuide type="bottom" id="q34-Em-aSi"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="uet-L7-L8h">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <containerView opaque="NO" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LsP-fM-fPd">
+                                <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                                <connections>
+                                    <segue destination="dvM-z6-ggz" kind="embed" id="0IZ-Jf-LMe"/>
+                                </connections>
+                            </containerView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xIK-Bk-XCG">
+                                <rect key="frame" x="547" y="547" width="45" height="45"/>
+                                <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                <accessibility key="accessibilityConfiguration" identifier="ShowMenu"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="45" id="8bW-0z-0jP"/>
+                                    <constraint firstAttribute="height" constant="45" id="y7j-Q9-ZYw"/>
+                                </constraints>
+                                <state key="normal" title="&lt;">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="22"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="parallaxEffect">
+                                        <real key="value" value="10"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="showMenu:" destination="xMr-tp-6Dr" eventType="touchUpInside" id="eHN-2Z-CgY"/>
+                                </connections>
+                            </button>
+                            <containerView opaque="NO" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Gtz-qt-Af3" userLabel="Menu Container">
+                                <rect key="frame" x="300" y="0.0" width="300" height="600"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="300" id="AWg-sZ-jg0"/>
+                                </constraints>
+                                <connections>
+                                    <segue destination="Ube-Zo-fVd" kind="embed" id="LPO-R3-xur"/>
+                                </connections>
+                            </containerView>
+                            <view userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ltE-kv-tfX">
+                                <rect key="frame" x="0.0" y="0.0" width="300" height="600"/>
+                                <subviews>
+                                    <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="P7c-by-039">
+                                        <rect key="frame" x="0.0" y="0.0" width="300" height="600"/>
+                                        <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="ouM-GL-ohl">
+                                            <rect key="frame" x="0.0" y="0.0" width="300" height="600"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <gestureRecognizers/>
+                                        </view>
+                                        <blurEffect style="light"/>
+                                    </visualEffectView>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                <gestureRecognizers/>
+                                <constraints>
+                                    <constraint firstItem="P7c-by-039" firstAttribute="leading" secondItem="ltE-kv-tfX" secondAttribute="leading" id="OB1-lP-cQi"/>
+                                    <constraint firstItem="P7c-by-039" firstAttribute="top" secondItem="ltE-kv-tfX" secondAttribute="top" id="V0Y-Fn-lok"/>
+                                    <constraint firstAttribute="bottom" secondItem="P7c-by-039" secondAttribute="bottom" id="tNw-2l-28n"/>
+                                    <constraint firstAttribute="trailing" secondItem="P7c-by-039" secondAttribute="trailing" id="xTZ-pu-GK9"/>
+                                </constraints>
+                                <connections>
+                                    <outletCollection property="gestureRecognizers" destination="ns4-ul-01a" appends="YES" id="8Ge-7e-vBq"/>
+                                </connections>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="Gtz-qt-Af3" firstAttribute="top" secondItem="uet-L7-L8h" secondAttribute="top" id="2eP-5C-u5i"/>
+                            <constraint firstAttribute="bottom" secondItem="ltE-kv-tfX" secondAttribute="bottom" id="B63-3c-JbS"/>
+                            <constraint firstItem="ltE-kv-tfX" firstAttribute="top" secondItem="uet-L7-L8h" secondAttribute="top" id="FdA-qh-9Hb"/>
+                            <constraint firstItem="q34-Em-aSi" firstAttribute="top" secondItem="xIK-Bk-XCG" secondAttribute="bottom" constant="8" id="H62-NE-vJP"/>
+                            <constraint firstItem="ltE-kv-tfX" firstAttribute="leading" secondItem="uet-L7-L8h" secondAttribute="leading" id="IS7-OV-Jbj"/>
+                            <constraint firstAttribute="bottom" secondItem="Gtz-qt-Af3" secondAttribute="bottom" id="QYw-Uk-25b"/>
+                            <constraint firstAttribute="trailing" secondItem="xIK-Bk-XCG" secondAttribute="trailing" constant="8" id="RNt-vA-zWW"/>
+                            <constraint firstItem="LsP-fM-fPd" firstAttribute="leading" secondItem="uet-L7-L8h" secondAttribute="leading" id="SdY-yt-s0M"/>
+                            <constraint firstAttribute="bottom" secondItem="LsP-fM-fPd" secondAttribute="bottom" id="SnM-jq-PLl"/>
+                            <constraint firstItem="Gtz-qt-Af3" firstAttribute="leading" secondItem="ltE-kv-tfX" secondAttribute="trailing" id="gdF-pZ-jsD"/>
+                            <constraint firstItem="Gtz-qt-Af3" firstAttribute="left" relation="lessThanOrEqual" secondItem="uet-L7-L8h" secondAttribute="right" id="iI2-mb-8OU"/>
+                            <constraint firstAttribute="trailing" secondItem="Gtz-qt-Af3" secondAttribute="trailing" priority="750" id="kmE-34-VJN"/>
+                            <constraint firstAttribute="trailing" secondItem="LsP-fM-fPd" secondAttribute="trailing" id="lja-TA-voF"/>
+                            <constraint firstAttribute="right" relation="lessThanOrEqual" secondItem="Gtz-qt-Af3" secondAttribute="right" id="vH2-mW-Pkd"/>
+                            <constraint firstItem="LsP-fM-fPd" firstAttribute="top" secondItem="uet-L7-L8h" secondAttribute="top" id="viZ-zu-yil"/>
+                        </constraints>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="xYh-Td-JLo" appends="YES" id="aCo-6w-3JM"/>
+                        </connections>
+                    </view>
+                    <connections>
+                        <outlet property="curtainView" destination="ltE-kv-tfX" id="wjG-4g-aoU"/>
+                        <outlet property="menuContainerView" destination="Gtz-qt-Af3" id="yPP-fY-3pp"/>
+                        <outlet property="menuPositionContraint" destination="kmE-34-VJN" id="4zb-1z-gsB"/>
+                        <outlet property="shadowView" destination="P7c-by-039" id="abw-zJ-ekx"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="xMr-tp-6Dr" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <panGestureRecognizer minimumNumberOfTouches="1" id="xYh-Td-JLo">
+                    <connections>
+                        <action selector="panGestureAction:" destination="HXI-X0-lwU" id="5rY-Wq-beC"/>
+                        <outlet property="delegate" destination="HXI-X0-lwU" id="lhA-Vu-oHl"/>
+                    </connections>
+                </panGestureRecognizer>
+                <tapGestureRecognizer id="ns4-ul-01a">
+                    <connections>
+                        <action selector="hideMenu:" destination="xMr-tp-6Dr" id="Ngm-Xb-5Wo"/>
+                    </connections>
+                </tapGestureRecognizer>
+            </objects>
+            <point key="canvasLocation" x="1166" y="549"/>
+        </scene>
+        <!--Regions Table View Controller-->
+        <scene sceneID="t2P-fj-NFs">
+            <objects>
+                <tableViewController id="Ube-Zo-fVd" customClass="RegionsTableViewController" customModule="eBayWeather" customModuleProvider="target" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" id="JoL-4K-2qY">
+                        <rect key="frame" x="0.0" y="0.0" width="300" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="regionCell" textLabel="8wW-LB-1Qk" style="IBUITableViewCellStyleDefault" id="gvB-70-z2h">
+                                <rect key="frame" x="0.0" y="28" width="300" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="gvB-70-z2h" id="y64-sM-R7r">
+                                    <rect key="frame" x="0.0" y="0.0" width="300" height="43.5"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="8wW-LB-1Qk">
+                                            <rect key="frame" x="15" y="0.0" width="270" height="43.5"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                                            <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="Ube-Zo-fVd" id="7Uv-YB-Z2f"/>
+                            <outlet property="delegate" destination="Ube-Zo-fVd" id="GMp-rD-3NM"/>
+                        </connections>
+                    </tableView>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="8ku-MJ-9YI" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1806" y="549"/>
+        </scene>
+        <!--WeatherCondition-->
+        <scene sceneID="WGt-I0-74a">
+            <objects>
+                <viewControllerPlaceholder storyboardName="WeatherCondition" id="dvM-z6-ggz" sceneMemberID="viewController"/>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="lmi-nx-Mlr" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="914" y="1017"/>
+        </scene>
+    </scenes>
+</document>

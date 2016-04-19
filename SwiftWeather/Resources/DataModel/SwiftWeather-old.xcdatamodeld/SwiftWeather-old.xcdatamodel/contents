@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10171" systemVersion="15E65" minimumToolsVersion="Automatic">
+    <entity name="DailyForecast" representedClassName="DailyForecast" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="maxTemp" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="minTemp" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="sunrise" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="sunset" optional="YES" attributeType="Date" syncable="YES"/>
+        <relationship name="hourly" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="WeatherCondition" inverseName="forecast" inverseEntity="WeatherCondition" syncable="YES"/>
+        <relationship name="region" maxCount="1" deletionRule="Nullify" destinationEntity="Region" inverseName="forecasts" inverseEntity="Region" syncable="YES"/>
+    </entity>
+    <entity name="Region" representedClassName="Region" syncable="YES">
+        <attribute name="isCurrent" optional="YES" attributeType="Boolean" syncable="YES"/>
+        <attribute name="isSelected" optional="YES" attributeType="Boolean" syncable="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="timeZone" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="currectCondition" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="WeatherCondition" inverseName="region" inverseEntity="WeatherCondition" syncable="YES"/>
+        <relationship name="forecasts" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DailyForecast" inverseName="region" inverseEntity="DailyForecast" syncable="YES"/>
+    </entity>
+    <entity name="SearchResult" representedClassName=".SearchResult" syncable="YES">
+        <attribute name="order" optional="YES" attributeType="Integer 16" defaultValueString="0" syncable="YES"/>
+        <attribute name="string" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="WeatherCondition" representedClassName="WeatherCondition" syncable="YES">
+        <attribute name="humidity" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="pressure" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="temperature" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="time" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="weatherCode" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="weatherDescription" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="weatherIconPath" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="weatherIconURL" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="windDirection" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <attribute name="windSpeed" optional="YES" attributeType="Integer 16" syncable="YES"/>
+        <relationship name="forecast" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DailyForecast" inverseName="hourly" inverseEntity="DailyForecast" syncable="YES"/>
+        <relationship name="region" maxCount="1" deletionRule="Nullify" destinationEntity="Region" inverseName="currectCondition" inverseEntity="Region" syncable="YES"/>
+    </entity>
+    <fetchRequest name="CityByName" entity="Region" predicateString="name LIKE $NAME"/>
+    <fetchRequest name="CurrentRegion" entity="Region" predicateString="isCurrent == 0"/>
+    <fetchRequest name="RegionsSortedByName" entity="Region" predicateString="TRUEPREDICATE"/>
+    <elements>
+        <element name="DailyForecast" positionX="-54" positionY="-9" width="128" height="150"/>
+        <element name="Region" positionX="-36" positionY="9" width="128" height="135"/>
+        <element name="SearchResult" positionX="-45" positionY="81" width="128" height="75"/>
+        <element name="WeatherCondition" positionX="-63" positionY="-18" width="128" height="225"/>
+    </elements>
+</model>
