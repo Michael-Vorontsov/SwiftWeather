@@ -19,7 +19,7 @@ public protocol DataRequestor:NSObjectProtocol {
   var dataOperationManager:DataRetrievalOperationManager! {get set}
 }
 
-public typealias DataRetrivalCompetionBlock = (success: Bool, results: [AnyObject], errors: [NSError]?) -> Void
+public typealias DataRetrivalCompetionBlock = (success: Bool, results: [AnyObject], errors: [ErrorType]?) -> Void
 
 /**
  Class responsible for retriving data from remote servever.
@@ -88,7 +88,7 @@ public class DataRetrievalOperationManager: NSObject {
     
     let completionOperation = NSBlockOperation {() -> Void in
       var success = true
-      var errors:[NSError]? = nil
+      var errors:[ErrorType]? = nil
       var results:[AnyObject] = []
       
       for operation in operations {

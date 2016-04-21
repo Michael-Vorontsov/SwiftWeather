@@ -27,10 +27,11 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
   
   var dataReceived = false
   
-  override func prepareForRetrieval() {
+  var geolocationError:NSError? = nil
+  
+  override func prepareForRetrieval() throws {
     guard true == CLLocationManager.locationServicesEnabled() else {
-      breakWithErrorCode(.InvalidParameters, userInfo: nil)
-      return
+      throw DataRetrievalOperationError.InvalidParameter(parameterName: "locationServicesEnabled")
     }
     
     
@@ -39,13 +40,14 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
     
     locationManager.requestWhenInUseAuthorization()
 
-    super.prepareForRetrieval()
+    try super.prepareForRetrieval()
   }
   
-  override func retriveData() {
+  override func retriveData() throws {
     
     // First - find current geo location (coordinates)
-    super.retriveData()
+    try super.retriveData()
+    
     self.locationManager.startUpdatingLocation()
     let syncDate = NSDate()
     
@@ -59,8 +61,7 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
     }
     
     guard true == dataReceived, let location = location else {
-      breakWithErrorCode(.NoData)
-      return
+      throw DataRetrievalOperationError.WrongDataFormat(error: nil)
     }
     
     // Second - revers geocode location to placemark
@@ -71,16 +72,19 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
       dispatch_semaphore_signal(semaphore)
     }
     dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, Int64(timeout * Double(NSEC_PER_SEC))))
+    if let geolocationError = geolocationError {
+      throw DataRetrievalOperationError.WrappedNSError(error: geolocationError)
+    }
+    
     
   }
   
   //Third: Extract description from placemark
-  override func parseData() {
+  override func parseData() throws {
     guard let convertedObject = convertedObject as? [CLPlacemark],
       let placemark = convertedObject.first,
       let builder = objectBuilder else {
-        breakWithErrorCode(.InvalidData)
-        return
+        throw DataRetrievalOperationError.InternalError(error: nil)
     }
     results = try? builder.buildCurrentRegion(placemark)
   }
@@ -105,7 +109,7 @@ extension CurrentLocationOperation {
   
   func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
     dataReceived = true
-    breakWithError(error)
+    self.geolocationError = error
   }
   
 }

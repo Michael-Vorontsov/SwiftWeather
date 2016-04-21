@@ -53,7 +53,7 @@ class ForecastDataOperation: NetworkDataRetrievalOperation, ObjectBuildeOperatio
   }
 
   
-  override func prepareForRetrieval() {
+  override func prepareForRetrieval() throws {
     
     if let regionID = regionID where nil == querry {
       let context = objectBuilder.coreDataManager.dataContext
@@ -69,26 +69,23 @@ class ForecastDataOperation: NetworkDataRetrievalOperation, ObjectBuildeOperatio
     requestParameters[Consts.requestKeys.days] = Consts.range
     requestParameters[Consts.requestKeys.format] = Consts.dataFormat
     
-    super.prepareForRetrieval()
+    try super.prepareForRetrieval()
   }
   
-  override func parseData() {
+  override func parseData() throws {
     guard let objectBuilder = objectBuilder,
       let convertedObject = convertedObject else {
-        
-        breakWithErrorCode(.InvalidParameters)
-        return
+        throw DataRetrievalOperationError.InvalidParameter(parameterName: "convertedObject")
     }
     
     guard let dictionaryInfo = convertedObject as? [String : AnyObject] else {
-      breakWithErrorCode(.InvalidParameters)
-      return
+      throw DataRetrievalOperationError.InvalidDataForKey(key: "root", value: nil)
     }
     
     do {
       self.results = try objectBuilder.buildRegion(dictionaryInfo,updateId: regionID)
     } catch {
-      breakWithErrorCode(.InvalidData)
+      throw DataRetrievalOperationError.InternalError(error: error)
     }
   }
   

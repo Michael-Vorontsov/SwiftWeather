@@ -24,8 +24,8 @@ class SampleDataOperation: DataRetrievalOperation {
     }
   }
   
-  override func parseData() {
-    super.parseData()
+  override func parseData() throws {
+    try super.parseData()
     
     // Add delay to make sure that operation not completed before cancel or error is called from test thread
     sleep(1)
@@ -230,6 +230,11 @@ class DataRetrievalOperationManagerTests: XCTestCase {
   }
   
   func testOperationBreakingWithError() {
+    
+    enum TestErrors:ErrorType {
+      case TestErrorWithParam(param:Int)
+    }
+    
     let manager:DataRetrievalOperationManager = DataRetrievalOperationManager(remote:"http://jsonplaceholder.typicode.com")
     
     let operation = SampleDataOperation()
@@ -244,21 +249,27 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       XCTAssertFalse(success)
       XCTAssertNotNil(errors)
       XCTAssertEqual(errors?.count, 1)
-      let error = errors?.last
-      XCTAssertNotNil(error)
-      XCTAssertEqual(error?.domain, "TestErrorDomain")
-      XCTAssertEqual(error?.code, 999)
-      XCTAssertFalse(completed)
+      if let error = errors?.last {
+        switch error {
+        case TestErrors.TestErrorWithParam(let param):
+          XCTAssertEqual(param, 999)
+          default:
+          XCTAssert(false, "TestErrors.TestErrorWithParam(999) expected!")
+        }
+      } else {
+        XCTAssert(false, "Error expected!")
+      }
       XCTAssertEqual(results.count, 0)
       XCTAssertEqual(operation.status, OperationStatus.Error)
       completed = true
       expct.fulfill()
     }
     
+    
     XCTAssertEqual(manager.operations.count, 2)
     
     dispatch_async(dispatch_get_main_queue()) {
-      operation.breakWithError(NSError(domain: "TestErrorDomain", code: 999, userInfo: nil))
+      operation.breakWithError(TestErrors.TestErrorWithParam(param: 999))
     }
     
     
@@ -267,8 +278,9 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
       XCTAssertNil(error)
     }
-    
+    XCTAssertEqual(operation.status, OperationStatus.Error)
     XCTAssertTrue(completed)
+    
   }
   
   func testNotForcedFailureOperation() {
@@ -356,13 +368,11 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     var completed:Bool = false
     
     operation1.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
       XCTAssertEqual(operation1.status, OperationStatus.Error)
       completed1 = true;
     }
     
     operation2.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
       XCTAssertEqual(operation2.status, OperationStatus.Completed)
       completed2 = true;
     }

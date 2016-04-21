@@ -28,26 +28,19 @@ public enum OperationStatus:Int {
   case Completed
 }
 
-/* TODO: Refactor
- Operation codes should be refactored to ErrorType, and use throw 
- instead of cuurent version's breakWithError() + retrun
-*/
-public enum RetrievalOperationErrorCodes:Int {
+public enum DataRetrievalOperationError: ErrorType {
   case Unknown
-  case InvalidParameters
-  case NoData
-  case InvalidData
-  case InvalidDataFormat
-  case ServerError
-  case Networking
-  case CoreServiceError
-  case CoreData
-  
-  public static let errorInfoKeys = (
-    response: "response",
-    serverCode: "errorCode"
-  )
+  case InvalidParameter(parameterName:String?)
+  case ServerResponse(errorCode:Int, errorResponse:NSHTTPURLResponse, responseData:NSData?)
+  case InvalidDataForKey(key:String, value:AnyObject?)
+  case NetworkError(error:NSError?)
+  case CoreDataError(error:NSError?)
+  case InternalError(error:ErrorType?)
+  case WrappedNSError(error:NSError?)
+  case WrongDataFormat(error:ErrorType?)
 }
+
+
 /**
  Public inteface for common data operation.
  Data can be retrived from network, file on disk, internal services (geolcation for ex.), etc
@@ -76,14 +69,14 @@ public enum RetrievalOperationErrorCodes:Int {
 
 public protocol DataRetrievalOperationProtocol: NSObjectProtocol {
   
-  func prepareForRetrieval()
-  func retriveData()
-  func convertData()
-  func parseData()
+  func prepareForRetrieval() throws
+  func retriveData() throws
+  func convertData() throws
+  func parseData() throws
   
-  func breakWithErrorCode(code: RetrievalOperationErrorCodes, userInfo:[String : AnyObject]?)
+  func breakWithError(error: ErrorType);
   
-  var error:NSError? {get}
+  var error:ErrorType? {get}
   var force:Bool {get set}
   var status:OperationStatus {get set}
   var stage:OperationStage {get set}

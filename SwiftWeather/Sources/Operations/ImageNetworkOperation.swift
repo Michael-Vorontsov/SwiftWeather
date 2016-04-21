@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import DataRetrievalKit
 
 /**
  Operation for loading image from cache or remote location.
@@ -22,7 +23,7 @@ class ImageNetworkOperation: CachedNetworkDataRetrievalOperation {
     super.init()
   }
   
-  override func prepareForRetrieval() {
+  override func prepareForRetrieval() throws {
     cache = true
     // If path contains ':/' then it is a full address,
     // else it is a local address and should by added to endpoint
@@ -31,16 +32,15 @@ class ImageNetworkOperation: CachedNetworkDataRetrievalOperation {
     } else {
       requestPath = imagePath
     }
-    super.prepareForRetrieval()
+    try super.prepareForRetrieval()
   }
   
   // Convert and parse data
-  override func convertData() {
+  override func convertData() throws {
     stage = .Converting
     guard let data = data,
       let image = UIImage(data: data) else {
-        breakWithErrorCode(.NoData)
-        return
+        throw DataRetrievalOperationError.WrongDataFormat(error: nil)
     }
     stage = .Parsing
     results = [image]

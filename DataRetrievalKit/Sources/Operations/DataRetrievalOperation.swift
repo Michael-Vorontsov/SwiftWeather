@@ -22,29 +22,28 @@ public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol
   public var stage: OperationStage = .Awaiting
   public var convertedObject: AnyObject?
   public var data: NSData? = nil
-  public var error:NSError? = nil
+  public var error:ErrorType? = nil
   public var results:[AnyObject]? = nil
   
-  public func prepareForRetrieval() {}
+  public func prepareForRetrieval() throws {}
   
-  public func retriveData() {}
+  public func retriveData() throws {}
   
-  public func convertData() {}
+  public func convertData() throws {}
   
-  public func parseData() {}
+  public func parseData() throws {}
   
-  public func breakWithError(error: NSError) {
+  public func breakWithNSError(error: NSError) {
+    breakWithError(DataRetrievalOperationError.WrappedNSError(error: error))
+  }
+
+  public func breakWithError(error: ErrorType) {
     guard stage != .Completed && status != .Completed else {
       return
     }
     self.error = error
     status = .Error
     self.cancel()
-  }
-  
-  public func breakWithErrorCode(code: RetrievalOperationErrorCodes = RetrievalOperationErrorCodes.Unknown, userInfo:[String : AnyObject]? = nil) {
-    let error = NSError(domain: consts, code: code.rawValue, userInfo: userInfo)
-    breakWithError(error)
   }
   
   override public func main(){
@@ -79,23 +78,28 @@ public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol
       }
     }
     
-    guard false == cancelled && status == .Queued && stage == .Awaiting else {return}
-    status = .Executing
-    stage = .Preparing
-    prepareForRetrieval()
-    guard false == cancelled else { return }
-    stage = .Requesting
-    retriveData()
-    guard false == cancelled else { return }
-    stage = .Converting
-    convertData()
-    guard false == cancelled else { return }
-    stage = .Parsing
-    parseData()
-    
-    if .Executing == status {
-      status = .Completed
-      stage = .Completed
+    do {
+      guard false == cancelled && status == .Queued && stage == .Awaiting else {return}
+      status = .Executing
+      stage = .Preparing
+      try prepareForRetrieval()
+      guard false == cancelled else { return }
+      stage = .Requesting
+      try retriveData()
+      guard false == cancelled else { return }
+      stage = .Converting
+      try convertData()
+      guard false == cancelled else { return }
+      stage = .Parsing
+      try parseData()
+      
+      if .Executing == status {
+        status = .Completed
+        stage = .Completed
+      }
+    } catch {
+      status = .Error
+      self.error = error
     }
   }
   

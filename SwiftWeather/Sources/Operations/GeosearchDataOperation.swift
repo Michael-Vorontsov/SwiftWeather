@@ -31,8 +31,8 @@ class GeosearchDataOperation: DataRetrievalOperation, ManagedObjectRetrievalOper
     super.init()
   }
   
-  override  func retriveData() {
-    super.retriveData()
+  override  func retriveData() throws {
+    try super.retriveData()
     let semaphore:dispatch_semaphore_t = dispatch_semaphore_create(0);
     
     geocoder.geocodeAddressString(requestAddress, inRegion: nil) { ( placemarks, error) -> Void in
@@ -45,12 +45,11 @@ class GeosearchDataOperation: DataRetrievalOperation, ManagedObjectRetrievalOper
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
   }
   
-  override func parseData() {
-    super.parseData()
+  override func parseData() throws {
+    try super.parseData()
     
     guard let convertedObject = convertedObject as? [CLPlacemark] else {
-      breakWithErrorCode(.InvalidData)
-      return
+      throw DataRetrievalOperationError.InternalError(error: nil)
     }
     
     let context = dataManager.dataContext

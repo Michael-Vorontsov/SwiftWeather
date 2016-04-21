@@ -17,10 +17,10 @@ import DataRetrievalKit
 class CachedNetworkDataRetrievalOperation: NetworkDataRetrievalOperation {
   
   var cache:Bool = false
-  override func retriveData() {
+  override func retriveData() throws {
     
     stage = .Requesting
-
+    
     var shouldRequestFromNetwork = true
     var cacheURL:NSURL? = nil
     
@@ -38,13 +38,17 @@ class CachedNetworkDataRetrievalOperation: NetworkDataRetrievalOperation {
     }
     // Retrieve from network if no file avaialble
     if shouldRequestFromNetwork {
-      super.retriveData()
+      try super.retriveData()
       // And save it to cahce if needed
       if let fileURL = cacheURL, let fileData = data where false == cancelled {
-        _ = try? fileData.writeToURL(fileURL, options: .DataWritingAtomic)
+        do {
+          try fileData.writeToURL(fileURL, options: .DataWritingAtomic)
+        } catch {
+          throw DataRetrievalOperationError.InternalError(error: error)
+        }
       }
     }
   }
   
-
+  
 }

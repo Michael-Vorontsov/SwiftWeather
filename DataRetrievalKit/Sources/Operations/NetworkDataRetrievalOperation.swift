@@ -51,15 +51,14 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
     return parametersString
   }
   
-  override public func prepareForRetrieval() {
-    super.prepareForRetrieval()
+  override public func prepareForRetrieval() throws {
+    try super.prepareForRetrieval()
     // Generate base URL by endPoint. No request possible without endPoint
     guard
       let base = requestEndPoint,
       var url = NSURL(string: base)
       else {
-        breakWithErrorCode(.InvalidParameters)
-        return
+        throw DataRetrievalOperationError.InvalidParameter(parameterName: "URL")
     }
     // Add path if any
     if let path = requestPath {
@@ -91,9 +90,8 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
     request = theRequest
   }
   
-  override public func retriveData() {
-    
-    super.retriveData()
+  override public func retriveData() throws {
+    try super.retriveData()
     
     // If no particular session specified - use shared session
     if nil == session {
@@ -102,10 +100,10 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
     
     guard let session = session,
       let request = request else {
-        breakWithErrorCode(RetrievalOperationErrorCodes.InvalidParameters)
-        return
+        throw DataRetrievalOperationError.InvalidParameter(parameterName: "Session")
     }
     let semaphore = dispatch_semaphore_create(0)
+    var inTaskError:DataRetrievalOperationError? = nil
     
     task = session.dataTaskWithRequest(request) {[unowned self] (data, response, nserror) -> Void in
       
@@ -116,61 +114,58 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
       self.response = response
       self.data = data
       
-//// For debug purpose: print string representation of response data, if any. Uncoment code bellow.
-//      if let data = data {
-//        let stringRepresentation = NSString(data: data, encoding: 0)
-//        print("Request:\(self.task?.originalRequest)\nResponse:\(response)\nData:\(stringRepresentation)")
-//      }
+      //// For debug purpose: print string representation of response data, if any. Uncoment code bellow.
+      //      if let data = data {
+      //        let stringRepresentation = NSString(data: data, encoding: 0)
+      //        print("Request:\(self.task?.originalRequest)\nResponse:\(response)\nData:\(stringRepresentation)")
+      //      }
       
-      // Process possible errors:
+      // Process possible network layer errors:
       if let nserror = nserror {
-        // Networking error, no server errors should processed
-        self.breakWithErrorCode(RetrievalOperationErrorCodes.Networking, userInfo: [NSUnderlyingErrorKey : nserror])
-      } else {
-        //  Process server errors
-        if let response = response,
-          let statusCode:Int = (response as? NSHTTPURLResponse)?.statusCode where false == (200 ..< 299 ~= statusCode) {
-          
-          let userInfo:[String: AnyObject] = [
-            RetrievalOperationErrorCodes.errorInfoKeys.response : response,
-            RetrievalOperationErrorCodes.errorInfoKeys.serverCode : statusCode
-          ]
-          self.breakWithErrorCode(.ServerError, userInfo: userInfo)
-        }
+        inTaskError = DataRetrievalOperationError.NetworkError(error: nserror)
+        
+      }
+      //  Process server errors
+      if let response = response as? NSHTTPURLResponse,
+        let statusCode:Int = response.statusCode where false == (200 ..< 299 ~= statusCode) && nil == inTaskError {
+        inTaskError = DataRetrievalOperationError.ServerResponse(errorCode: statusCode, errorResponse: response, responseData: data)
+        
       }
       
+      // Release semaphore
       dispatch_semaphore_signal(semaphore)
     }
     
     guard let task = task else {
-      breakWithErrorCode(RetrievalOperationErrorCodes.InvalidParameters)
-      return
+      throw DataRetrievalOperationError.InvalidParameter(parameterName: "Task")
     }
     task.resume()
     
     let timeout = session.configuration.timeoutIntervalForRequest + 1.0
     dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, Int64(timeout * Double(NSEC_PER_SEC))))
     
+    // If error occured during netwrok tesk execution - throw
+    if let taskError = inTaskError {
+      throw taskError
+    }
+    
+    // If network task doesn't completed - throw
     guard .Completed == task.state else {
-      breakWithErrorCode(.Networking)
-      return
+      throw DataRetrievalOperationError.NetworkError(error: nil)
     }
   }
   
-  public override func convertData() {
-    
-    super.convertData()
+  public override func convertData() throws {
+    try super.convertData()
     guard let data = data else {
-      breakWithErrorCode(.NoData)
-      return
+      throw DataRetrievalOperationError.WrongDataFormat(error: nil)
     }
     do {
       let converted = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue:0))
       convertedObject = converted
     }
     catch {
-      breakWithErrorCode(.InvalidDataFormat)
-      return
+      throw DataRetrievalOperationError.WrongDataFormat(error: error)
     }
   }
   

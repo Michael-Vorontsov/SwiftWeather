@@ -21,13 +21,13 @@ class SampleMSGObject:NSObject{
 
 class SampleNetworkSyncOperation: NetworkDataRetrievalOperation {
   
-  override func prepareForRetrieval() {
+  override func prepareForRetrieval() throws {
     requestPath = "posts"
-    super.prepareForRetrieval()
+    try super.prepareForRetrieval()
   }
   
-  override func parseData() {
-    super.parseData()
+  override func parseData() throws {
+    try super.parseData()
     var objects:[AnyObject] = []
     let dataInfo = convertedObject
     guard  false == cancelled else  { return }
@@ -53,7 +53,7 @@ class SampleNetworkSyncOperation: NetworkDataRetrievalOperation {
 class SampleAcceessTokenOperation: SampleNetworkSyncOperation, AccessKeyOperationProtocol {}
 
 class HTTPStubsNetworkOperationTests: XCTestCase {
-
+  
   weak var savedStub: OHHTTPStubsDescriptor?
   var manager:DataRetrievalOperationManager!
   
@@ -83,14 +83,14 @@ class HTTPStubsNetworkOperationTests: XCTestCase {
     savedStub = stub(isHost("stubbed_request.com")) { _ in
       
       let JSONObject = [
-          "error": "Stub for error",
-          "errorDescription": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+        "error": "Stub for error",
+        "errorDescription": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
         ]
       
       return OHHTTPStubsResponse(JSONObject: JSONObject, statusCode: Int32(code), headers: nil).requestTime(1.0, responseTime: 3.0)
     }
   }
-
+  
   override func setUp() {
     super.setUp()
     
@@ -163,7 +163,7 @@ class HTTPStubsNetworkOperationTests: XCTestCase {
     XCTAssertEqual(operation.request?.URL?.absoluteString, "http://stubbed_request.com/posts")
     XCTAssertTrue(completed)
   }
- 
+  
   func testAccessToken() {
     stubMock()
     
@@ -194,16 +194,16 @@ class HTTPStubsNetworkOperationTests: XCTestCase {
       XCTAssertNotNil(results)
       XCTAssertEqual(results.count, 0)
       
-      if let errors = errors {
-        XCTAssertGreaterThan(errors.count, 0)
-        let error = errors[0] 
-        XCTAssertEqual(error.code, RetrievalOperationErrorCodes.ServerError.rawValue)
-        XCTAssertNotNil(error.userInfo)
-        if let errorInfo = error.userInfo as? [String : AnyObject] {
-          XCTAssertNotNil(errorInfo[RetrievalOperationErrorCodes.errorInfoKeys.serverCode])
-          XCTAssertEqual(errorInfo[RetrievalOperationErrorCodes.errorInfoKeys.serverCode] as? Int, 400)
-        }
+      if let errors = errors,
+        let error = errors.first as? DataRetrievalOperationError {
         
+        switch error {
+        case .ServerResponse(let errorCode, let errorResponse, _) :
+          XCTAssertEqual(errorCode, 400)
+          XCTAssertNotNil(errorResponse)
+        default:
+          XCTAssertTrue(false, "ServerResponse error expected")
+        }
       } else {
         XCTAssert(false, "Errors expected")
       }
@@ -220,9 +220,9 @@ class HTTPStubsNetworkOperationTests: XCTestCase {
     
     XCTAssertFalse(completed)
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
+    self.waitForExpectationsWithTimeout(300.0) { (error:NSError?) -> Void in
       XCTAssertNil(error)
     }
   }
-
+  
 }
