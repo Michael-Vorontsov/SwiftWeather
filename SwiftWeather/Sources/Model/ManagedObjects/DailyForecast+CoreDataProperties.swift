@@ -14,11 +14,11 @@ import CoreData
 
 extension DailyForecast {
 
-    @NSManaged var date: NSDate?
+    @NSManaged var date: Date?
     @NSManaged var maxTemp: NSNumber?
     @NSManaged var minTemp: NSNumber?
-    @NSManaged var sunrise: NSDate?
-    @NSManaged var sunset: NSDate?
+    @NSManaged var sunrise: Date?
+    @NSManaged var sunset: Date?
     @NSManaged var hourly: NSSet?
     @NSManaged var region: Region?
 

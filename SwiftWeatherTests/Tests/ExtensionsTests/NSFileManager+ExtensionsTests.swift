@@ -7,18 +7,19 @@
 //
 
 import XCTest
+import DataRetrievalKit
 @testable import SwiftWeather
 
 class NSFileManager_ExtensionsTests: XCTestCase {
   
   func testAppDirectory() {
-    let appDirs = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
-    XCTAssertTrue(appDirs.contains(NSFileManager.applicationDocumentsDirectory))
+    let appDirs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    XCTAssertTrue(appDirs.contains(FileManager.applicationDocumentsDirectory))
   }
   
   func testCachesDirectory() {
-    let appDirs = NSFileManager.defaultManager().URLsForDirectory(.CachesDirectory, inDomains: .UserDomainMask)
-    XCTAssertTrue(appDirs.contains(NSFileManager.applicationCachesDirectory))
+    let appDirs = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+    XCTAssertTrue(appDirs.contains(FileManager.applicationCachesDirectory))
   }
   
   

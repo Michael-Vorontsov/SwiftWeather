@@ -11,12 +11,12 @@ import CoreData
 import DataRetrievalKit
 import CoreLocation
 
-enum RegionBuilderErrors:ErrorType {
-  case NoContextAvailable
-  case CoreDataError
-  case RemoteError(errorInfo:AnyObject)
-  case WrongData(dataInfo:[String : AnyObject])
-  case IncompleteData
+enum RegionBuilderErrors:Error {
+  case noContextAvailable
+  case coreDataError
+  case remoteError(errorInfo:AnyObject)
+  case wrongData(dataInfo:[String : AnyObject])
+  case incompleteData
 }
 
 private let Consts = (
@@ -47,24 +47,24 @@ extension ObjectBuilder {
   /**
    Wrap region building into data context.
    */
-  func buildRegion(forecastInfo:[String : AnyObject], updateId:NSManagedObjectID? = nil) throws -> [AnyObject] {
+  func buildRegion(_ forecastInfo:[String : AnyObject], updateId:NSManagedObjectID? = nil) throws -> [AnyObject] {
     guard let dataManager = coreDataManager else {
-      throw RegionBuilderErrors.NoContextAvailable
+      throw RegionBuilderErrors.noContextAvailable
     }
     let dataContext = dataManager.dataContext
     
     if let errorInfo = forecastInfo[Consts.responseKeys.error] {
-      throw RegionBuilderErrors.RemoteError(errorInfo: errorInfo)
+      throw RegionBuilderErrors.remoteError(errorInfo: errorInfo)
     }
     
     guard let info = forecastInfo[Consts.responseKeys.data] as? [String : AnyObject] else {
-      throw RegionBuilderErrors.WrongData(dataInfo: forecastInfo)
+      throw RegionBuilderErrors.wrongData(dataInfo: forecastInfo)
     }
     
-    var parsingError:ErrorType? = nil
+    var parsingError:Error? = nil
     var results:[AnyObject] = [AnyObject]()
     
-    dataContext.performBlockAndWait{
+    dataContext.performAndWait{
       do {
         let region = try self.buildRegion(info, updateId: updateId, context: dataContext)
         results.append(region.objectID)
@@ -84,7 +84,7 @@ extension ObjectBuilder {
   /**
    Actually build region object in specific context
    */
-  func buildRegion(forecastInfo:[String : AnyObject], updateId:NSManagedObjectID? = nil , context:NSManagedObjectContext ) throws -> Region{
+  func buildRegion(_ forecastInfo:[String : AnyObject], updateId:NSManagedObjectID? = nil , context:NSManagedObjectContext ) throws -> Region{
     
         guard
           let reqestArray = forecastInfo[Consts.responseKeys.request] as? [AnyObject],
@@ -93,24 +93,24 @@ extension ObjectBuilder {
           let conditionInfo = (forecastInfo[Consts.responseKeys.condition] as? [[String : AnyObject]])?.last,
           let forecastsInfo = forecastInfo[Consts.responseKeys.weather] as? [[String : AnyObject]]
           else {
-            throw RegionBuilderErrors.WrongData(dataInfo: forecastInfo)
+            throw RegionBuilderErrors.wrongData(dataInfo: forecastInfo)
         }
     
     guard let coreDataManager = coreDataManager else {
-      throw RegionBuilderErrors.NoContextAvailable
+      throw RegionBuilderErrors.noContextAvailable
     }
     
     
     let regionRequest = coreDataManager.requestWithRegionName(regionName)
-    let regions = try? context.executeFetchRequest(regionRequest)
+    let regions = try? context.fetch(regionRequest)
     
     var regionToUpdate:Region? = nil
-    if let updateId = updateId, let regionFromId = context.objectWithID(updateId) as? Region {
+    if let updateId = updateId, let regionFromId = context.object(with: updateId) as? Region {
       regionToUpdate = regionFromId
     }
 
-    guard let region = regionToUpdate ?? (regions?.last as? Region) ?? Region(context:context) else {
-      throw RegionBuilderErrors.CoreDataError
+    guard let region = regionToUpdate ?? (regions?.last as? Region) ?? Region(managedContext:context) else {
+      throw RegionBuilderErrors.coreDataError
     }
     region.name = regionName
     
@@ -119,7 +119,7 @@ extension ObjectBuilder {
       let forecastToRemove = region.forecasts?.mutableCopy() as? NSMutableSet
       for forecastInfo in forecastsInfo {
         let forecast = try buildForecast(forecastInfo, region: region)
-        forecastToRemove?.removeObject(forecast)
+        forecastToRemove?.remove(forecast)
       }
       
     } catch {
@@ -132,20 +132,20 @@ extension ObjectBuilder {
    Update current region
    */
   
-  func buildCurrentRegion(placemark:CLPlacemark) throws -> [AnyObject] {
+  func buildCurrentRegion(_ placemark:CLPlacemark) throws -> [AnyObject] {
 //    guard let coreDataManager = coreDataManager else {
 //      throw RegionBuilderErrors.NoContextAvailable
 //    }
     let dataContext = coreDataManager.dataContext
     var regions = [AnyObject]()
     
-    dataContext.performBlockAndWait {
+    dataContext.performAndWait {
 //      let request = self.coreDataManager.requestCurrentRegion()
-      let request = NSFetchRequest(entityName: Region.entityName)
-      request.predicate = NSPredicate(format: "isCurrent == %@", true)
-      let allCurrentRegions = try? dataContext.executeFetchRequest(request)
-      var region = (allCurrentRegions?.last) as? Region
-      region = region ?? Region(context: dataContext)
+      let request = NSFetchRequest<Region>(entityName: Region.entityName)
+      request.predicate = NSPredicate(format: "isCurrent == %@", true as CVarArg)
+      let allCurrentRegions = try? dataContext.fetch(request)
+      var region = (allCurrentRegions?.last)
+      region = region ?? Region(managedContext: dataContext)
       
       
       region!.isCurrent = true

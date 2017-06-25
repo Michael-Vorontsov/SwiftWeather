@@ -49,7 +49,7 @@ extension UIView {
           continue
         }
         for subEffect in subEffects {
-          guard let subEffect = subEffect as? UIInterpolatingMotionEffect where .TiltAlongVerticalAxis == subEffect.type else {
+          guard let subEffect = subEffect as? UIInterpolatingMotionEffect, .tiltAlongVerticalAxis == subEffect.type else {
             continue
           }
           return subEffect.maximumRelativeValue as? CGFloat ?? 0.0
@@ -66,11 +66,11 @@ extension UIView {
         }
         return
       }
-      let verticalEffect = UIInterpolatingMotionEffect(keyPath: Consts.motionKeys.y, type: .TiltAlongVerticalAxis)
+      let verticalEffect = UIInterpolatingMotionEffect(keyPath: Consts.motionKeys.y, type: .tiltAlongVerticalAxis)
       verticalEffect.minimumRelativeValue = -parallaxEffect
       verticalEffect.maximumRelativeValue = parallaxEffect
       
-      let horizontalEffect = UIInterpolatingMotionEffect(keyPath: Consts.motionKeys.x, type: .TiltAlongHorizontalAxis)
+      let horizontalEffect = UIInterpolatingMotionEffect(keyPath: Consts.motionKeys.x, type: .tiltAlongHorizontalAxis)
       horizontalEffect.minimumRelativeValue = -parallaxEffect
       horizontalEffect.maximumRelativeValue = parallaxEffect
       

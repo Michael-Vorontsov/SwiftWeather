@@ -18,11 +18,13 @@ class GeosearchOperationTests: XCTestCase {
   override func setUp() {
     super.setUp()
     if nil == operationManager {
-      operationManager = DataRetrievalOperationManager(remote:"http://api.worldweatheronline.com/free/v2",
-                                                       accessKey: "bdaaf16df2e9ef7eb6f4e40e5f51e83efee4cb3c")
+      operationManager = DataRetrievalOperationManager(
+        remote:"http://api.worldweatheronline.com/free/v2",
+        accessKey: "bdaaf16df2e9ef7eb6f4e40e5f51e83efee4cb3c"
+      )
       
       
-      dataManager = CoreDataManager(databaseName:"TestDB")
+      dataManager = CoreDataManager(databaseName:"TestDB", modelName: "SwiftWeather")
       operationManager.coreDataManager = dataManager
       operationManager.objectBuilder = ObjectBuilder(dataManager:dataManager)
     }
@@ -31,13 +33,13 @@ class GeosearchOperationTests: XCTestCase {
   func testGeoOperation() {
     let operation = GeosearchDataOperation(request: "London")
     XCTAssertNotNil(operation)
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     operationManager.addOperations([operation]) { (success, results,  errors) in
       XCTAssertTrue(success)
       XCTAssertGreaterThan(results.count, 0)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
     
   }
   

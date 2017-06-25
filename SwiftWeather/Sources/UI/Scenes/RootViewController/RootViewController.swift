@@ -26,14 +26,14 @@ class RootViewController: UIViewController, DataPresenter, DataRequestor {
   var menuVisible:Bool = false {
     didSet {
       menuPositionContraint.constant = (menuVisible) ? 0 : -menuWidth
-      UIView.animateWithDuration(0.1) {
+      UIView.animate(withDuration: 0.1, animations: {
         self.view.layoutIfNeeded()
         self.shadowView.alpha = self.menuVisible ? 1.0 : 0.0
-      }
+      }) 
     }
   }
   
-  override func viewWillAppear(animated: Bool) {
+  override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     menuVisible = false
   }
@@ -42,44 +42,44 @@ class RootViewController: UIViewController, DataPresenter, DataRequestor {
 
 extension RootViewController: UIGestureRecognizerDelegate {
   
-  @IBAction func panGestureAction(sender: UIPanGestureRecognizer) {
+  @IBAction func panGestureAction(_ sender: UIPanGestureRecognizer) {
     var progress:CGFloat = menuVisible ? 1.0 : 0.0
     switch sender.state {
-    case .Changed:
-      let transition = -sender.translationInView(view).x
+    case .changed:
+      let transition = -sender.translation(in: view).x
       menuPositionContraint.constant = (menuVisible) ? transition :  transition - menuWidth
       progress = 1.0 + (menuPositionContraint.constant / menuWidth)
       
-    case .Ended:
+    case .ended:
       menuVisible = menuWidth / 2.0 > -menuPositionContraint.constant
       progress = menuVisible ? 1.0 : 0.0
     default: break
     }
     
-    UIView.animateWithDuration(0.1) {
+    UIView.animate(withDuration: 0.1, animations: {
       self.view.layoutIfNeeded()
       self.shadowView.alpha = progress
-    }
+    }) 
   }
   
-  func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool {
+  func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
     if let gestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer {
-      let velocity = gestureRecognizer.velocityInView(view)
+      let velocity = gestureRecognizer.velocity(in: view)
       // Begin recognising if horizontal staring velocity greater then vertical one
       return abs(velocity.x) > abs(velocity.y)
     }
     return false
   }
   
-  func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
     return true
   }
   
-  @IBAction func showMenu(sender:AnyObject) {
+  @IBAction func showMenu(_ sender:AnyObject) {
     menuVisible = true
   }
   
-  @IBAction func hideMenu(sender:AnyObject) {
+  @IBAction func hideMenu(_ sender:AnyObject) {
     menuVisible = false
   }
   
@@ -87,11 +87,11 @@ extension RootViewController: UIGestureRecognizerDelegate {
 
 extension RootViewController {
   
-  override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-    if let destinationViewController = segue.destinationViewController as? DataRequestor {
+  override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    if let destinationViewController = segue.destination as? DataRequestor {
       destinationViewController.dataOperationManager = dataOperationManager
     }
-    if let destinationViewController = segue.destinationViewController as? DataPresenter {
+    if let destinationViewController = segue.destination as? DataPresenter {
       destinationViewController.coreDataManager = coreDataManager
     }
   }
@@ -99,11 +99,11 @@ extension RootViewController {
 
 // Global action - Responder Chain pattern
 extension RootViewController {
-  @IBAction func addNewRegion(sender:AnyObject) {
+  @IBAction func addNewRegion(_ sender:AnyObject) {
     let addRegionController = AddRegionTableViewController()
     addRegionController.dataOperationManager = dataOperationManager
     addRegionController.coreDataManager = coreDataManager
-    self.presentViewController(addRegionController, animated: true, completion: nil)
+    self.present(addRegionController, animated: true, completion: nil)
   }
   
 }

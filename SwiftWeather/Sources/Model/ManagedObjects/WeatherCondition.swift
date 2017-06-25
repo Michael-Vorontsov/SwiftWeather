@@ -10,29 +10,29 @@ import Foundation
 import CoreData
 
 enum WindDirection: Int {
-  case Unknown = 0
-  case N
-  case NNW
-  case NW
-  case WNW
-  case W
-  case WSW
-  case SW
-  case SSW
-  case S
-  case SSE
-  case SE
-  case ESE
-  case E
-  case ENE
-  case NE
-  case NNE
+  case unknown = 0
+  case n
+  case nnw
+  case nw
+  case wnw
+  case w
+  case wsw
+  case sw
+  case ssw
+  case s
+  case sse
+  case se
+  case ese
+  case e
+  case ene
+  case ne
+  case nne
   
   /**
    Angle from north direction counter clockwise
   */
   var angleRawValue:Double? {
-    guard  self != .Unknown else {
+    guard  self != .unknown else {
       return nil
     }
     let sector = rawValue - 1
@@ -43,24 +43,24 @@ enum WindDirection: Int {
   init(rawString:String?) {
     let rawString = rawString ?? ""
     switch rawString {
-    case "N": self = .N
-    case "NNW": self = .NNW
-    case "NW": self = .NW
-    case "WNW": self = .WNW
-    case "W": self = .W
-    case "WSW": self = .WSW
-    case "SW": self = .SW
-    case "SSW": self = .SSW
-    case "S": self =  .S
-    case "SSE": self = .SSE
-    case "SE": self = .SE
-    case "ESE": self = .ESE
-    case "E": self = .E
-    case "ENE": self = .ENE
-    case "NE": self = .NE
-    case "NNE": self = .NNE
+    case "N": self = .n
+    case "NNW": self = .nnw
+    case "NW": self = .nw
+    case "WNW": self = .wnw
+    case "W": self = .w
+    case "WSW": self = .wsw
+    case "SW": self = .sw
+    case "SSW": self = .ssw
+    case "S": self =  .s
+    case "SSE": self = .sse
+    case "SE": self = .se
+    case "ESE": self = .ese
+    case "E": self = .e
+    case "ENE": self = .ene
+    case "NE": self = .ne
+    case "NNE": self = .nne
 
-    default: self = .Unknown
+    default: self = .unknown
     }
   }
   
@@ -71,9 +71,9 @@ class WeatherCondition: NSManagedObject, NamedManagedObject {
   
   var windDir:WindDirection {
     guard let windDirection = windDirection else {
-      return WindDirection.Unknown
+      return WindDirection.unknown
     }
-    return WindDirection(rawValue:windDirection.integerValue) ?? WindDirection.Unknown
+    return WindDirection(rawValue:windDirection.intValue) ?? WindDirection.unknown
     
   }
   

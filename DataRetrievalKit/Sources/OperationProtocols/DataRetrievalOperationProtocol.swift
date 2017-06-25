@@ -9,35 +9,35 @@
 import Foundation
 
 public enum OperationStage:Int {
-  case Awaiting
-  case Preparing
-  case Requesting
-  case Converting
-  case Parsing
-  case Completed
+  case awaiting
+  case preparing
+  case requesting
+  case converting
+  case parsing
+  case completed
 }
 
 public enum OperationStatus:Int {
-  case Created
-  case Queued
-  case Executing
-  case Paused
-  case Duplicate
-  case Cancelled
-  case Error
-  case Completed
+  case created
+  case queued
+  case executing
+  case paused
+  case duplicate
+  case cancelled
+  case error
+  case completed
 }
 
-public enum DataRetrievalOperationError: ErrorType {
-  case Unknown
-  case InvalidParameter(parameterName:String?)
-  case ServerResponse(errorCode:Int, errorResponse:NSHTTPURLResponse, responseData:NSData?)
-  case InvalidDataForKey(key:String, value:AnyObject?)
-  case NetworkError(error:NSError?)
-  case CoreDataError(error:NSError?)
-  case InternalError(error:ErrorType?)
-  case WrappedNSError(error:NSError?)
-  case WrongDataFormat(error:ErrorType?)
+public enum DataRetrievalOperationError: Error {
+  case unknown
+  case invalidParameter(parameterName:String?)
+  case serverResponse(errorCode:Int, errorResponse:HTTPURLResponse, responseData:Data?)
+  case invalidDataForKey(key:String, value:AnyObject?)
+  case networkError(error:NSError?)
+  case coreDataError(error:NSError?)
+  case internalError(error:Error?)
+  case wrappedNSError(error:NSError?)
+  case wrongDataFormat(error:Error?)
 }
 
 
@@ -74,13 +74,13 @@ public protocol DataRetrievalOperationProtocol: NSObjectProtocol {
   func convertData() throws
   func parseData() throws
   
-  func breakWithError(error: ErrorType);
+  func breakWithError(_ error: Error);
   
-  var error:ErrorType? {get}
+  var error:Error? {get}
   var force:Bool {get set}
   var status:OperationStatus {get set}
   var stage:OperationStage {get set}
-  var data:NSData? {get set}
+  var data:Data? {get set}
   var results:[AnyObject]? {get set}
   var convertedObject:AnyObject? {get set}
 }

@@ -42,13 +42,22 @@ class RegionsTableViewController: UITableViewController , DataPresenter, DataReq
     }
   }
   
-  lazy var resultsController:NSFetchedResultsController! = {
-    guard let context = self.coreDataManager?.mainContext else {
-      return nil
-    }
+  lazy var resultsController:NSFetchedResultsController<Region>! = {
+//    guard let context = self.coreDataManager?.mainContext else {
+//      return nil
+//    }
+    let context = self.coreDataManager!.mainContext
     
-    let request = NSFetchRequest(entityName: Region.entityName)
-    request.sortDescriptors = [NSSortDescriptor(key: Const.sortKeys.current, ascending: false), NSSortDescriptor(key: Const.sortKeys.name, ascending: true)]
+    let request = NSFetchRequest<Region>(entityName: Region.entityName)
+    request.sortDescriptors = [
+      NSSortDescriptor(
+        key: Const.sortKeys.current,
+        ascending: false
+      ),
+      NSSortDescriptor(
+        key: Const.sortKeys.name,
+        ascending: true
+      )]
     let resultsController = NSFetchedResultsController(
       fetchRequest: request,
       managedObjectContext: context ,
@@ -67,20 +76,20 @@ class RegionsTableViewController: UITableViewController , DataPresenter, DataReq
   
   
   lazy var toolBar:UIToolbar =  {
-    let toolbar = UIToolbar(frame: CGRectMake(0,0,0,42))
+    let toolbar = UIToolbar(frame: CGRect(x: 0,y: 0,width: 0,height: 42))
     return toolbar
   }()
   
-  override var editing: Bool {
+  override var isEditing: Bool {
     didSet {
-      if true == editing {
-        let editButton = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: #selector(editAction))
+      if true == isEditing {
+        let editButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(editAction))
         editButton.accessibilityLabel = Const.accessability.cancel
-        let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: nil, action: #selector(RootViewController.addNewRegion))
+        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(RootViewController.addNewRegion))
         addButton.accessibilityLabel = Const.accessability.add
         toolBar.setItems([addButton, editButton], animated: true)
       } else {
-        let editButton = UIBarButtonItem(barButtonSystemItem: .Edit, target: self, action: #selector(editAction))
+        let editButton = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(editAction))
         editButton.accessibilityLabel = Const.accessability.edit
         toolBar.setItems([editButton], animated: true)
       }
@@ -93,34 +102,34 @@ class RegionsTableViewController: UITableViewController , DataPresenter, DataReq
     
   }
   
-  @IBAction func editAction(sender:AnyObject) {
-    editing = !editing
+  @IBAction func editAction(_ sender:AnyObject) {
+    isEditing = !isEditing
   }
   
-  override func viewWillAppear(animated: Bool) {
+  override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     tableView?.reloadData()
-    editing = false
+    isEditing = false
   }
   
-  override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     return resultsController?.fetchedObjects?.count ?? 0
   }
   
   
-  override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     
-    let cell = tableView.dequeueReusableCellWithIdentifier(Const.cellID.region, forIndexPath: indexPath)
+    let cell = tableView.dequeueReusableCell(withIdentifier: Const.cellID.region, for: indexPath)
     guard
-      let fetchedObjects = resultsController.fetchedObjects where fetchedObjects.count > indexPath.row,
-      let region = fetchedObjects[indexPath.row] as? Region else {
+      let fetchedObjects = resultsController.fetchedObjects, fetchedObjects.count > indexPath.row else {
         return UITableViewCell()
     }
+    let region = fetchedObjects[indexPath.row]
     
     let current = (region.isCurrent?.boolValue) ?? false
     let selected = (region.isSelected?.boolValue) ?? false
     if current {
-      cell.textLabel?.text =  NSString(format: NSLocalizedString(Const.localeKeysCurrent, comment: ""), (region.name ?? "")) as String
+      cell.textLabel?.text =  String(format: NSLocalizedString(Const.localeKeysCurrent, comment: ""), (region.name ?? ""))
     } else {
       cell.textLabel?.text = region.name!
     }
@@ -131,32 +140,33 @@ class RegionsTableViewController: UITableViewController , DataPresenter, DataReq
     return cell
   }
   
-  override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+  override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     guard
-      let fetchedObjects = resultsController.fetchedObjects where fetchedObjects.count > indexPath.row,
-      let region = fetchedObjects[indexPath.row] as? Region else {
+      let fetchedObjects = resultsController.fetchedObjects, fetchedObjects.count > indexPath.row else {
         return
     }
+    let region = fetchedObjects[indexPath.row]
     selectedRegion = region
-    UIApplication.sharedApplication().sendAction(#selector(RootViewController.hideMenu(_:)), to: nil, from: self, forEvent: nil)
+    // Sending selector to responder chain
+    UIApplication.shared.sendAction(#selector(RootViewController.hideMenu(_:)), to: nil, from: self, for: nil)
   }
   
-  override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+  override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
     return indexPath.row > 0
   }
   
-  override func tableView(tableView: UITableView, shouldShowMenuForRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+  override func tableView(_ tableView: UITableView, shouldShowMenuForRowAt indexPath: IndexPath) -> Bool {
     return indexPath.row > 0
   }
   
-  override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+  override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
     guard
-      let fetchedObjects = resultsController.fetchedObjects where fetchedObjects.count > indexPath.row,
+      let fetchedObjects = resultsController.fetchedObjects, fetchedObjects.count > indexPath.row,
       let region = fetchedObjects[indexPath.row] as? Region else {
         return
     }
     let context = region.managedObjectContext!
-    context.deleteObject(region)
+    context.delete(region)
     context.save(recursive: true)
     
   }
@@ -165,24 +175,24 @@ class RegionsTableViewController: UITableViewController , DataPresenter, DataReq
 
 extension RegionsTableViewController:NSFetchedResultsControllerDelegate {
   
-  func controllerWillChangeContent(controller: NSFetchedResultsController) {
+  func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
     tableView.beginUpdates()
   }
   
-  func controllerDidChangeContent(controller: NSFetchedResultsController) {
+  func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
     tableView.endUpdates()
   }
   
-  func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+  func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
     switch type {
-    case .Insert:
-      tableView.insertRowsAtIndexPaths([newIndexPath!], withRowAnimation: .Left)
-    case .Delete:
-      tableView.deleteRowsAtIndexPaths([indexPath!], withRowAnimation: .Left)
-    case .Update:
-      tableView.reloadRowsAtIndexPaths([indexPath!], withRowAnimation: .Fade)
-    case .Move:
-      tableView.reloadRowsAtIndexPaths([indexPath!, newIndexPath!], withRowAnimation: .Right)
+    case .insert:
+      tableView.insertRows(at: [newIndexPath!], with: .left)
+    case .delete:
+      tableView.deleteRows(at: [indexPath!], with: .left)
+    case .update:
+      tableView.reloadRows(at: [indexPath!], with: .fade)
+    case .move:
+      tableView.reloadRows(at: [indexPath!, newIndexPath!], with: .right)
     }
   }
   

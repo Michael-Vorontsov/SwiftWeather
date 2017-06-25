@@ -9,6 +9,19 @@
 import Foundation
 import CoreData
 import DataRetrievalKit
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
 
 private let Consts = (
   path : "/weather.ashx",
@@ -35,31 +48,31 @@ private let Consts = (
  */
 extension ObjectBuilder {
   
-  func buildForecast(forecastInfo:[String : AnyObject], region:Region) throws -> DailyForecast {
+  func buildForecast(_ forecastInfo:[String : AnyObject], region:Region) throws -> DailyForecast {
     
-    let dateFormatter = NSDateFormatter()
+    let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd"
 
     guard
       let context = region.managedObjectContext,
       let dateString = forecastInfo[Consts.responseKeys.date] as? String,
-      let date = dateFormatter.dateFromString(dateString) else {
-        throw BuilderErrors.WrongData(dataInfo: forecastInfo)
+      let date = dateFormatter.date(from: dateString) else {
+        throw BuilderErrors.wrongData(dataInfo: forecastInfo)
     }
     
-    let request = NSFetchRequest(entityName: DailyForecast.entityName)
-    request.predicate = NSPredicate(format: "region == %@ AND date == %@", region, date)
-    let validForecasts = try? context.executeFetchRequest(request)
+    let request = NSFetchRequest<NSFetchRequestResult>(entityName: DailyForecast.entityName)
+    request.predicate = NSPredicate(format: "region == %@ AND date == %@", region, date as CVarArg)
+    let validForecasts = try? context.fetch(request)
     
     guard validForecasts?.count < 2,
-      let forecast = (validForecasts?.first as? DailyForecast) ?? DailyForecast(context: context)
+      let forecast = (validForecasts?.first as? DailyForecast) ?? DailyForecast(managedContext: context)
       else {
-        throw BuilderErrors.CoreDataError
+        throw BuilderErrors.coreDataError
     }
     forecast.date = date
     forecast.region = region
-    forecast.maxTemp = Int(forecastInfo[Consts.responseKeys.maxTemperature] as? String ?? "")
-    forecast.minTemp = Int(forecastInfo[Consts.responseKeys.minTemperature] as? String ?? "")
+    forecast.maxTemp = (forecastInfo[Consts.responseKeys.maxTemperature] as? String ?? "").toNumber()
+    forecast.minTemp = (forecastInfo[Consts.responseKeys.minTemperature] as? String ?? "").toNumber()
     
     return forecast
   }

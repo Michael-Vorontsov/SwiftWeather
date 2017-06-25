@@ -23,7 +23,7 @@ class ForecastDataOperationTests: XCTestCase {
                                                        accessKey: "bdaaf16df2e9ef7eb6f4e40e5f51e83efee4cb3c")
       
       
-      dataManager = CoreDataManager(databaseName:"TestDB")
+      dataManager = CoreDataManager(databaseName:"TestDB", modelName: "SwiftWeather")
       operationManager.coreDataManager = dataManager
       operationManager.objectBuilder = ObjectBuilder(dataManager:dataManager)
     }
@@ -39,7 +39,7 @@ class ForecastDataOperationTests: XCTestCase {
   func testOperationByName() {
     let operation = ForecastDataOperation(regionName: "London")
     XCTAssertNotNil(operation)
-    let exp = expectationWithDescription("Operation Exp.")
+    let exp = expectation(description: "Operation Exp.")
     operationManager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       XCTAssertNotNil(results)
@@ -47,18 +47,18 @@ class ForecastDataOperationTests: XCTestCase {
       XCTAssertNil(errors)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(30.0, handler: nil)
+    waitForExpectations(timeout: 30.0, handler: nil)
     
     guard let resultID = operation.results?.first as? NSManagedObjectID,
       let context = operationManager.coreDataManager?.mainContext,
-      let region = context.objectWithID(resultID) as? Region
+      let region = context.object(with: resultID) as? Region
       else {
         XCTAssert(false)
         return
     }
     
     XCTAssertNotNil(region.name)
-    let regionContainsLondon:Bool = (region.name?.containsString("London")) ?? false
+    let regionContainsLondon:Bool = (region.name?.contains("London")) ?? false
     XCTAssertTrue(regionContainsLondon)
     XCTAssertNotNil(region.currectCondition)
     XCTAssertNotNil(region.currectCondition?.temperature)
@@ -70,13 +70,13 @@ class ForecastDataOperationTests: XCTestCase {
   }
   
   func testOperationByRegion() {
-    let regionToUpdate = Region(context: dataManager.mainContext)
+    let regionToUpdate = Region(managedContext: dataManager.mainContext)
     XCTAssertNotNil(regionToUpdate)
     regionToUpdate!.name = "Dublin"
     let operation = ForecastDataOperation(region: regionToUpdate!)
     
     XCTAssertNotNil(operation)
-    let exp = expectationWithDescription("Operation Exp.")
+    let exp = expectation(description: "Operation Exp.")
     operationManager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       XCTAssertNotNil(results)
@@ -84,18 +84,18 @@ class ForecastDataOperationTests: XCTestCase {
       XCTAssertNil(errors)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(30.0, handler: nil)
+    waitForExpectations(timeout: 30.0, handler: nil)
     
     guard let resultID = operation.results?.first as? NSManagedObjectID,
       let context = operationManager.coreDataManager?.mainContext,
-      let region = context.objectWithID(resultID) as? Region
+      let region = context.object(with: resultID) as? Region
       else {
         XCTAssert(false)
         return
     }
     
     XCTAssertNotNil(region.name)
-    let regionContainsString:Bool = (region.name?.containsString("Dublin")) ?? false
+    let regionContainsString:Bool = (region.name?.contains("Dublin")) ?? false
     XCTAssertTrue(regionContainsString)
     XCTAssertNotNil(region.currectCondition)
     XCTAssertNotNil(region.currectCondition?.temperature)
@@ -107,13 +107,13 @@ class ForecastDataOperationTests: XCTestCase {
   }
 
   func testOperationByRegionID() {
-    let regionToUpdate = Region(context: dataManager.mainContext)
+    let regionToUpdate = Region(managedContext: dataManager.mainContext)
     XCTAssertNotNil(regionToUpdate)
     regionToUpdate!.name = "Paris"
     let operation = ForecastDataOperation(regionIdentifier: regionToUpdate!.objectID)
     
     XCTAssertNotNil(operation)
-    let exp = expectationWithDescription("Operation Exp.")
+    let exp = expectation(description: "Operation Exp.")
     operationManager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       XCTAssertNotNil(results)
@@ -121,18 +121,18 @@ class ForecastDataOperationTests: XCTestCase {
       XCTAssertNil(errors)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(30.0, handler: nil)
+    waitForExpectations(timeout: 30.0, handler: nil)
     
     guard let resultID = operation.results?.first as? NSManagedObjectID,
       let context = operationManager.coreDataManager?.mainContext,
-      let region = context.objectWithID(resultID) as? Region
+      let region = context.object(with: resultID) as? Region
       else {
         XCTAssert(false)
         return
     }
     
     XCTAssertNotNil(region.name)
-    let regionContainsString:Bool = (region.name?.containsString("Paris")) ?? false
+    let regionContainsString:Bool = (region.name?.contains("Paris")) ?? false
     XCTAssertTrue(regionContainsString)
     XCTAssertNotNil(region.currectCondition)
     XCTAssertNotNil(region.currectCondition?.temperature)

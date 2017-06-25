@@ -16,7 +16,7 @@ protocol CellWithNib {
 extension CellWithNib where Self: UITableViewHeaderFooterView {
   
   static var nib:UINib {
-    let name = NSStringFromClass(Self).componentsSeparatedByString(".").last ?? ""
+    let name = NSStringFromClass(Self).components(separatedBy: ".").last ?? ""
     return UINib(nibName: name, bundle: nil)
   }
   

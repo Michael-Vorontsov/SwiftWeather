@@ -31,18 +31,18 @@ class ImageNetworkOperationTests: XCTestCase {
     super.tearDown()
   }
   
-  private func stubMock() {
-    let bundle = NSBundle(forClass: ImageNetworkOperationTests.self)
-    stub(isHost("stubbed_request.com")) { _ in
-      let imageURL = bundle.URLForResource("test", withExtension: "jpeg")
+  fileprivate func stubMock() {
+    let bundle = Bundle(for: ImageNetworkOperationTests.self)
+    stub(condition: isHost("stubbed_request.com")) { _ in
+      let imageURL = bundle.url(forResource: "test", withExtension: "jpeg")
       return OHHTTPStubsResponse(fileURL: imageURL!, statusCode: 200, headers: nil)
     }
   }
   
-  private func stubError() {
-    stub(isHost("wrong_stubbed_request.com")) { _ in
-      let JSONObject = ["error": 0]
-      return OHHTTPStubsResponse(JSONObject: JSONObject, statusCode: 500, headers: nil).requestTime(0.1, responseTime: 0.1)
+  fileprivate func stubError() {
+    stub(condition: isHost("wrong_stubbed_request.com")) { _ in
+      let jsonObject = ["error": 0]
+      return OHHTTPStubsResponse(jsonObject: jsonObject, statusCode: 500, headers: nil).requestTime(0.1, responseTime: 0.1)
     }
   }
   
@@ -51,7 +51,7 @@ class ImageNetworkOperationTests: XCTestCase {
     stubError()
     let operation = ImageNetworkOperation(imagePath: "/image")
     operation.cache = false
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       XCTAssertEqual(results.count, 1)
@@ -59,7 +59,7 @@ class ImageNetworkOperationTests: XCTestCase {
       XCTAssertNotNil(fetchedImage)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
   }
   
   func testImageOperationWithFullName() {
@@ -67,12 +67,12 @@ class ImageNetworkOperationTests: XCTestCase {
     stubError()
     let operation = ImageNetworkOperation(imagePath: "http://wrong_stubbed_request.com/image")
     operation.cache = false
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       XCTAssertFalse(success)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
   }
  
 }

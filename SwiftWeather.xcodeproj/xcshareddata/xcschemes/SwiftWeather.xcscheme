@@ -33,15 +33,11 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "D04C377B1CAEE1BF0082B57F"
-               BuildableName = "DataRetrievalKitTests.xctest"
-               BlueprintName = "DataRetrievalKitTests"
+               BlueprintIdentifier = "D0C086F71EFFF23B008C35A8"
+               BuildableName = "DataRetrivalKitUnitTests.xctest"
+               BlueprintName = "DataRetrivalKitUnitTests"
                ReferencedContainer = "container:SwiftWeather.xcodeproj">
             </BuildableReference>
-            <LocationScenarioReference
-               identifier = "London, England"
-               referenceType = "1">
-            </LocationScenarioReference>
          </TestableReference>
          <TestableReference
             skipped = "NO">

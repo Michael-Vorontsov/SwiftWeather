@@ -8,12 +8,12 @@
 
 import Foundation
 
-public enum BuilderErrors:ErrorType {
-  case NoContextAvailable
-  case CoreDataError
-  case RemoteError(errorInfo:AnyObject)
-  case WrongData(dataInfo:[String : AnyObject])
-  case IncompleteData
+public enum BuilderErrors:Error {
+  case noContextAvailable
+  case coreDataError
+  case remoteError(errorInfo:AnyObject)
+  case wrongData(dataInfo:[String : AnyObject])
+  case incompleteData
 }
 
 /**
@@ -23,9 +23,9 @@ public enum BuilderErrors:ErrorType {
  ManagedObject DataRetrieval operation contains builder with coreDataManager injected in it by OperationManager, and
  specific builder selector to be called determine by specific subclass.
  */
-public class ObjectBuilder: NSObject, DataPresenter {
+open class ObjectBuilder: NSObject, DataPresenter {
   
-  public var coreDataManager: CoreDataManager!
+  open var coreDataManager: CoreDataManager!
   
   public init(dataManager:CoreDataManager) {
     coreDataManager = dataManager

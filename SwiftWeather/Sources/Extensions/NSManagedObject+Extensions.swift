@@ -10,26 +10,29 @@ import Foundation
 import CoreData
 
 protocol NamedManagedObject {
-  static var entityName: String {get}
-  init?(context:NSManagedObjectContext)
+  
+  static var entityName: String { get }
+
+  // Similar to iOS10 init?(context:)
+  init?(managedContext:NSManagedObjectContext)
 }
 
 extension NamedManagedObject where Self: NSManagedObject {
-  
+
   static var entityName:String {
-    return NSStringFromClass(Self).componentsSeparatedByString(".").last ?? ""
+    return NSStringFromClass(Self.self).components(separatedBy: ".").last ?? ""
   }
   
-  init?(context:NSManagedObjectContext) {
-    guard let newObject = (NSEntityDescription.insertNewObjectForEntityForName(Self.entityName, inManagedObjectContext: context)) as? Self else {
+  init?(managedContext:NSManagedObjectContext) {
+    guard let newObject = (NSEntityDescription.insertNewObject(forEntityName: Self.entityName, into: managedContext)) as? Self else {
       return nil
     }
     self = newObject
   }
   
-  static func allObjects(context:NSManagedObjectContext) -> [Self]? {
-    let request = NSFetchRequest(entityName: Self.entityName)
-    return (try? context.executeFetchRequest(request)) as? [Self]
+  static func allObjects(_ context:NSManagedObjectContext) -> [Self]? {
+    let request = NSFetchRequest<Self>(entityName: Self.self.entityName )
+    return (try? context.fetch(request))
   }
   
 }

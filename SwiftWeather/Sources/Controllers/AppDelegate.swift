@@ -19,8 +19,10 @@ private let Consts = (
   ),
   defaultDatabaseName : "SwiftWeather",
   defaultDatabaseModel : "SwiftWeather",
-  defaultRemoteHost : "http://api.worldweatheronline.com/free/v2",
-  defaultAccessKey : "bdaaf16df2e9ef7eb6f4e40e5f51e83efee4cb3c"
+  defaultRemoteHost : "http://api.worldweatheronline.com/premium/v1",
+  
+//  defaultRemoteHost : "http://api.worldweatheronline.com/free/v2",
+  defaultAccessKey : "33b2ec022d08499d80b155031172506"
 )
 
 @UIApplicationMain
@@ -28,7 +30,7 @@ private let Consts = (
 class AppDelegate: UIResponder, UIApplicationDelegate, DataPresenter, DataRequestor {
   
   static var sharedAppDelegate:AppDelegate {
-    return UIApplication.sharedApplication().delegate as! AppDelegate
+    return UIApplication.shared.delegate as! AppDelegate
   }
   
   var window: UIWindow?
@@ -37,14 +39,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate, DataPresenter, DataReques
   var coreDataManager: CoreDataManager!
   var objectBuilder: ObjectBuilder!
   
-  func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+  
+  
+//  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+  
+  func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    
+    var appControllerContext = [String : String]()
+    if let launchOptions = launchOptions {
+      for (kind, value) in launchOptions {
+        if let value = value as? String {
+          appControllerContext[kind.rawValue] = value
+        }
+      }
+    }
+    
+
     // Setup internal services
-    let databaseName = launchOptions?[Consts.launchKeys.databaseName] as? String ?? Consts.defaultDatabaseName
-    let modelName = launchOptions?[Consts.launchKeys.databaseModel] as? String ?? Consts.defaultDatabaseModel
+    /*
+     
+     Defalut values provided as constants, however database parameters and enpoint can be customized through Launch options, for example to run UI tests on custom envoronment
+     */
+    let databaseName: String = appControllerContext[Consts.launchKeys.databaseName] ?? Consts.defaultDatabaseName
+    
+    let modelName = appControllerContext[Consts.launchKeys.databaseModel]  ?? Consts.defaultDatabaseModel
     coreDataManager = CoreDataManager(databaseName: databaseName, modelName: modelName)
     
-    let remoteHost = launchOptions?[Consts.launchKeys.remoteHost] as? String ?? Consts.defaultRemoteHost
-    let accessKey = launchOptions?[Consts.launchKeys.accessKey] as? String ?? Consts.defaultAccessKey
+    let remoteHost = appControllerContext[Consts.launchKeys.remoteHost] ?? Consts.defaultRemoteHost
+    let accessKey = appControllerContext[Consts.launchKeys.accessKey] ?? Consts.defaultAccessKey
     
     dataOperationManager = DataRetrievalOperationManager(remote: remoteHost, accessKey: accessKey)
     dataOperationManager.coreDataManager = coreDataManager
@@ -67,11 +91,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, DataPresenter, DataReques
     return true
   }
   
-  func applicationDidBecomeActive(application: UIApplication) {
+  func applicationDidBecomeActive(_ application: UIApplication) {
     refreshCurrentRegionForecast()
   }
   
-  func applicationWillTerminate(application: UIApplication) {
+  func applicationWillTerminate(_ application: UIApplication) {
     coreDataManager?.backContext().save(recursive: true)
   }
   

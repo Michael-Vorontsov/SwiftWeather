@@ -11,18 +11,18 @@ import DataRetrievalKit
 
 extension UIImageView {
   
-  func setRemoteImage(address:String, operationManager:DataRetrievalOperationManager) {
-    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .White)
+  func setRemoteImage(_ address:String, operationManager:DataRetrievalOperationManager) {
+    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .white)
     let oldColor = backgroundColor
-    backgroundColor = UIColor.clearColor()
+    backgroundColor = UIColor.clear
     self.addSubview(activityIndicator)
-    activityIndicator.center = CGPointMake( CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds))
+    activityIndicator.center = CGPoint( x: self.bounds.midX, y: self.bounds.midY)
     activityIndicator.startAnimating()
     
     let operation = ImageNetworkOperation(imagePath: address)
     operationManager.addOperations([operation]) { (success, results, errors) in
       activityIndicator.removeFromSuperview()
-      if let image = results.first as? UIImage where true == success {
+      if let image = results.first as? UIImage, true == success {
         self.backgroundColor = oldColor
         self.image = image
       }

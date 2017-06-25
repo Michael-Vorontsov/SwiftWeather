@@ -8,17 +8,17 @@
 
 import Foundation
 
-extension NSFileManager {
+extension FileManager {
   /**
    Return application document directory
    */
-  @nonobjc static let applicationDocumentsDirectory: NSURL = {
-    let urls = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
+  @nonobjc static let applicationDocumentsDirectory: URL = {
+    let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
     return urls.last!
   }()
 
-  @nonobjc static let applicationCachesDirectory: NSURL = {
-    let urls = NSFileManager.defaultManager().URLsForDirectory(.CachesDirectory, inDomains: .UserDomainMask)
+  @nonobjc static let applicationCachesDirectory: URL = {
+    let urls = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
     return urls.last!
   }()
 

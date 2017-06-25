@@ -17,7 +17,7 @@ extension WeatherCondition {
     @NSManaged var humidity: NSNumber?
     @NSManaged var pressure: NSNumber?
     @NSManaged var temperature: NSNumber?
-    @NSManaged var time: NSDate?
+    @NSManaged var time: Date?
     @NSManaged var weatherCode: NSNumber?
     @NSManaged var weatherDescription: String?
     @NSManaged var weatherIconPath: String?

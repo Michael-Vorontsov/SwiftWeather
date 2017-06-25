@@ -31,14 +31,14 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
   
   override func prepareForRetrieval() throws {
     guard true == CLLocationManager.locationServicesEnabled() else {
-      throw DataRetrievalOperationError.InvalidParameter(parameterName: "locationServicesEnabled")
+      throw DataRetrievalOperationError.invalidParameter(parameterName: "locationServicesEnabled")
     }
     
-    
-    locationManager = CLLocationManager()
-    locationManager.delegate = self
-    
-    locationManager.requestWhenInUseAuthorization()
+    DispatchQueue.main.sync {
+      locationManager = CLLocationManager()
+      locationManager.delegate = self
+      locationManager.requestWhenInUseAuthorization()
+    }
 
     try super.prepareForRetrieval()
   }
@@ -49,31 +49,31 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
     try super.retriveData()
     
     self.locationManager.startUpdatingLocation()
-    let syncDate = NSDate()
+    let syncDate = Date()
     
     // Can't use semaphore without blocking delegation thread, so use wait loop.
-    while false == cancelled && false == dataReceived && timeout > -syncDate.timeIntervalSinceNow {
-      NSRunLoop.currentRunLoop().runUntilDate(NSDate(timeIntervalSinceNow: 0.1))
+    while false == isCancelled && false == dataReceived && timeout > -syncDate.timeIntervalSinceNow {
+      RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
     }
     
-    guard false == cancelled else {
+    guard false == isCancelled else {
       return
     }
     
     guard true == dataReceived, let location = location else {
-      throw DataRetrievalOperationError.WrongDataFormat(error: nil)
+      throw DataRetrievalOperationError.wrongDataFormat(error: nil)
     }
     
     // Second - revers geocode location to placemark
     geocoder = CLGeocoder()
-    let semaphore = dispatch_semaphore_create(0)
+    let semaphore = DispatchSemaphore(value: 0)
     geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
-      self.convertedObject = placemarks
-      dispatch_semaphore_signal(semaphore)
+      self.convertedObject = placemarks as AnyObject
+      semaphore.signal()
     }
-    dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, Int64(timeout * Double(NSEC_PER_SEC))))
+    _ = semaphore.wait(timeout: DispatchTime.now() + Double(Int64(timeout * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC))
     if let geolocationError = geolocationError {
-      throw DataRetrievalOperationError.WrappedNSError(error: geolocationError)
+      throw DataRetrievalOperationError.wrappedNSError(error: geolocationError)
     }
     
     
@@ -84,7 +84,7 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
     guard let convertedObject = convertedObject as? [CLPlacemark],
       let placemark = convertedObject.first,
       let builder = objectBuilder else {
-        throw DataRetrievalOperationError.InternalError(error: nil)
+        throw DataRetrievalOperationError.internalError(error: nil)
     }
     results = try? builder.buildCurrentRegion(placemark)
   }
@@ -100,16 +100,16 @@ class CurrentLocationOperation: DataRetrievalOperation, CLLocationManagerDelegat
 // MARK: CLLocationManagerDelegate
 extension CurrentLocationOperation {
   
-  func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+  func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     locationManager.stopUpdatingLocation()
     location = locations.first
     dataReceived = true
     
   }
   
-  func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+  func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
     dataReceived = true
-    self.geolocationError = error
+    self.geolocationError = error as NSError
   }
   
 }

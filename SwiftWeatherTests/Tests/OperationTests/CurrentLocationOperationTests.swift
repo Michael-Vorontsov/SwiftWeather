@@ -19,7 +19,7 @@ class CurrentLocationOperationTests: XCTestCase {
     super.setUp()
     if nil == dataRetrievalManager {
       dataRetrievalManager = DataRetrievalOperationManager()
-      dataManager = CoreDataManager(databaseName:"Test")
+      dataManager = CoreDataManager(databaseName:"Test", modelName: "SwiftWeather")
       dataRetrievalManager.coreDataManager = dataManager
       dataRetrievalManager.objectBuilder = ObjectBuilder(dataManager:dataManager)
     }
@@ -36,7 +36,7 @@ class CurrentLocationOperationTests: XCTestCase {
   func testLocation() {
     XCTAssertNotNil(dataRetrievalManager)
     let operation = CurrentLocationOperation()
-    let exp = expectationWithDescription("Operation exp");
+    let exp = expectation(description: "Operation exp");
     dataRetrievalManager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       XCTAssertNil(errors)
@@ -44,11 +44,11 @@ class CurrentLocationOperationTests: XCTestCase {
       XCTAssertEqual(results.count, 1)
       
       if let result = results.first as? String {
-        XCTAssertTrue(result.containsString("London"))
+        XCTAssertTrue(result.contains("London"))
       }
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(30.0, handler: nil)
+    waitForExpectations(timeout: 30.0, handler: nil)
     XCTAssertNotNil(operation)
   }
   

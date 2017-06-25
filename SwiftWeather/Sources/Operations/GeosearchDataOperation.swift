@@ -33,43 +33,40 @@ class GeosearchDataOperation: DataRetrievalOperation, ManagedObjectRetrievalOper
   
   override  func retriveData() throws {
     try super.retriveData()
-    let semaphore:dispatch_semaphore_t = dispatch_semaphore_create(0);
+    let semaphore:DispatchSemaphore = DispatchSemaphore(value: 0);
     
-    geocoder.geocodeAddressString(requestAddress, inRegion: nil) { ( placemarks, error) -> Void in
+    geocoder.geocodeAddressString(requestAddress, in: nil) { ( placemarks, error) -> Void in
       
       self.error = error
-      self.convertedObject = placemarks
+      self.convertedObject = placemarks as AnyObject
       
-      dispatch_semaphore_signal(semaphore)
+      semaphore.signal()
     }
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+    _ = semaphore.wait(timeout: DispatchTime.distantFuture)
   }
   
   override func parseData() throws {
     try super.parseData()
     
     guard let convertedObject = convertedObject as? [CLPlacemark] else {
-      throw DataRetrievalOperationError.InternalError(error: nil)
+      throw DataRetrievalOperationError.internalError(error: nil)
     }
     
     let context = dataManager.dataContext
     var parsedObjects = [NSManagedObjectID]()
-    context.performBlockAndWait { 
+    context.performAndWait { 
       if let allResults =  SearchResult.allObjects(context) {
         context.deleteObjects(allResults)
       }
       
       for placemark in convertedObject {
-        let result = SearchResult(context: context)!
+        let result = SearchResult(managedContext: context)!
         parsedObjects.append(result.objectID)
         guard let name = placemark.name,
-        let locality = placemark.locality,
         let country = placemark.country else {
           continue
         }
-        
-        result.string = ((name == locality) ? "\(name)"
-          : "\(name): \(locality)") + "(\(country))"
+        result.string =  "\(name), \(country )"
       }
       
     }

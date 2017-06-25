@@ -17,52 +17,54 @@ private let Consts = (
   headerContentTypeKey : "Content-Type"
 )
 
-public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataRetrievalOperationProtocol {
+open class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataRetrievalOperationProtocol {
   
-  public var task: NSURLSessionTask? = nil
-  public var session:NSURLSession? = nil
-  public var request: NSURLRequest? = nil
-  public var requestEndPoint: String? = nil
-  public var requestPath: String? = nil
+  open var task: URLSessionTask? = nil
+  open var session:URLSession? = nil
+  open var request: URLRequest? = nil
+  open var requestEndPoint: String? = nil
+  open var requestPath: String? = nil
   
-  public var requestMethod: NetworkRequestMethod = .GET
-  public var requestParametersEncoding: NetworkParameterEncoding = .JSON
+  open var requestMethod: NetworkRequestMethod = .GET
+  open var requestParametersEncoding: NetworkParameterEncoding = .JSON
   
-  public lazy var requestParameters: [String : AnyObject] = {return [String : AnyObject]()}()
-  public lazy var requestHeaders: [String : String] = {return [String : String]()}()
+  open lazy var requestParameters: [String : AnyObject] = {return [String : AnyObject]()}()
+  open lazy var requestHeaders: [String : String] = {return [String : String]()}()
   
-  public var response: NSURLResponse? = nil
+  open var response: URLResponse? = nil
   
-  func encodeParameters(parameters:[String : AnyObject]) -> String {
+  func encodeParameters(_ parameters:[String : AnyObject]) -> String {
     var parametersString = ""
     let generalDelimitersToEncode = Consts.allowedCharacters.generalDelimitersToEncode
     let subDelimitersToEncode = Consts.allowedCharacters.subDelimitersToEncode
     
-    let allowedCharacterSet = NSCharacterSet.URLQueryAllowedCharacterSet().mutableCopy() as! NSMutableCharacterSet
-    allowedCharacterSet.removeCharactersInString(generalDelimitersToEncode + subDelimitersToEncode)
+    let allowedCharacterSet = (CharacterSet.urlQueryAllowed as NSCharacterSet).mutableCopy() as! NSMutableCharacterSet
+    allowedCharacterSet.removeCharacters(in: generalDelimitersToEncode + subDelimitersToEncode)
     
     for (key, value) in parameters {
       parametersString += parametersString.characters.count > 0 ? "&" : ""
-      if let formattedKey = NSString(string:key).stringByAddingPercentEncodingWithAllowedCharacters(allowedCharacterSet),
-        let formattedValue = NSString(string:String(value)).stringByAddingPercentEncodingWithAllowedCharacters(allowedCharacterSet) {
+      if let formattedKey = NSString(string:key).addingPercentEncoding(withAllowedCharacters: allowedCharacterSet as CharacterSet),
+
+        let formattedValue = String(describing: value).addingPercentEncoding(withAllowedCharacters: allowedCharacterSet as CharacterSet) {
+
         parametersString += "\(formattedKey)=\(formattedValue)"
       }
     }
     return parametersString
   }
   
-  override public func prepareForRetrieval() throws {
+  override open func prepareForRetrieval() throws {
     try super.prepareForRetrieval()
     // Generate base URL by endPoint. No request possible without endPoint
     guard
       let base = requestEndPoint,
-      var url = NSURL(string: base)
+      var url = URL(string: base)
       else {
-        throw DataRetrievalOperationError.InvalidParameter(parameterName: "URL")
+        throw DataRetrievalOperationError.invalidParameter(parameterName: "URL")
     }
     // Add path if any
     if let path = requestPath {
-      url = url.URLByAppendingPathComponent(path)
+      url = url.appendingPathComponent(path)
     }
     
     let method = requestMethod
@@ -71,7 +73,7 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
       switch method {
       case .GET:
         let parametersString = encodeParameters(requestParameters)
-        url = NSURL(string: "?" + parametersString, relativeToURL: url) ?? url
+        url = URL(string: "?" + parametersString, relativeTo: url) ?? url
       case .POST:
         //TODO: Insert some code for assembling POST reuqest if needed
         break
@@ -79,35 +81,35 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
     }
     
     //MARK: Construct request
-    let theRequest = NSMutableURLRequest(URL:url)
-    theRequest.HTTPMethod = method.rawValue
-    var headers = requestHeaders ?? [String : String]()
+    let theRequest = NSMutableURLRequest(url:url)
+    theRequest.httpMethod = method.rawValue
+    var headers = requestHeaders
     headers[Consts.headerContentTypeKey] = requestParametersEncoding.rawValue
     for (key, value) in headers {
       theRequest.addValue(value, forHTTPHeaderField: key)
     }
     
-    request = theRequest
+    request = theRequest as URLRequest
   }
   
-  override public func retriveData() throws {
+  override open func retriveData() throws {
     try super.retriveData()
     
     // If no particular session specified - use shared session
     if nil == session {
-      session = NSURLSession.sharedSession()
+      session = URLSession.shared
     }
     
     guard let session = session,
       let request = request else {
-        throw DataRetrievalOperationError.InvalidParameter(parameterName: "Session")
+        throw DataRetrievalOperationError.invalidParameter(parameterName: "Session")
     }
-    let semaphore = dispatch_semaphore_create(0)
+    let semaphore = DispatchSemaphore(value: 0)
     var inTaskError:DataRetrievalOperationError? = nil
     
-    task = session.dataTaskWithRequest(request) {[unowned self] (data, response, nserror) -> Void in
+    task = session.dataTask(with: request, completionHandler: {[unowned self] (data, response, nserror) -> Void in
       
-      guard false == self.cancelled else {
+      guard false == self.isCancelled else {
         return
       }
       
@@ -122,27 +124,33 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
       
       // Process possible network layer errors:
       if let nserror = nserror {
-        inTaskError = DataRetrievalOperationError.NetworkError(error: nserror)
+        inTaskError = DataRetrievalOperationError.networkError(error: nserror as NSError)
         
       }
       //  Process server errors
-      if let response = response as? NSHTTPURLResponse,
-        let statusCode:Int = response.statusCode where false == (200 ..< 299 ~= statusCode) && nil == inTaskError {
-        inTaskError = DataRetrievalOperationError.ServerResponse(errorCode: statusCode, errorResponse: response, responseData: data)
+      if let response = response as? HTTPURLResponse,
+        let statusCode:Int = response.statusCode,
+        false == (200 ..< 299 ~= statusCode),
+        nil == inTaskError {
+        inTaskError = DataRetrievalOperationError.serverResponse(
+          errorCode: statusCode,
+          errorResponse: response,
+          responseData: data
+        )
         
       }
       
       // Release semaphore
-      dispatch_semaphore_signal(semaphore)
-    }
+      semaphore.signal()
+    }) 
     
     guard let task = task else {
-      throw DataRetrievalOperationError.InvalidParameter(parameterName: "Task")
+      throw DataRetrievalOperationError.invalidParameter(parameterName: "Task")
     }
     task.resume()
     
     let timeout = session.configuration.timeoutIntervalForRequest + 1.0
-    dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, Int64(timeout * Double(NSEC_PER_SEC))))
+    _ = semaphore.wait(timeout: DispatchTime.now() + Double(Int64(timeout * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC))
     
     // If error occured during netwrok tesk execution - throw
     if let taskError = inTaskError {
@@ -150,26 +158,26 @@ public class NetworkDataRetrievalOperation: DataRetrievalOperation, NetworkDataR
     }
     
     // If network task doesn't completed - throw
-    guard .Completed == task.state else {
-      throw DataRetrievalOperationError.NetworkError(error: nil)
+    guard .completed == task.state else {
+      throw DataRetrievalOperationError.networkError(error: nil)
     }
   }
   
-  public override func convertData() throws {
+  open override func convertData() throws {
     try super.convertData()
     guard let data = data else {
-      throw DataRetrievalOperationError.WrongDataFormat(error: nil)
+      throw DataRetrievalOperationError.wrongDataFormat(error: nil)
     }
     do {
-      let converted = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue:0))
-      convertedObject = converted
+      let converted = try JSONSerialization.jsonObject(with: data as Data, options: JSONSerialization.ReadingOptions(rawValue:0))
+      convertedObject = converted as AnyObject
     }
     catch {
-      throw DataRetrievalOperationError.WrongDataFormat(error: error)
+      throw DataRetrievalOperationError.wrongDataFormat(error: error)
     }
   }
   
-  public override func cancel() {
+  open override func cancel() {
     task?.cancel()
     super.cancel()
   }

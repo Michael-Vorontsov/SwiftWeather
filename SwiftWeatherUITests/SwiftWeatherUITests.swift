@@ -28,7 +28,7 @@ class SwiftWeatherUITests: XCTestCase {
    Should work on all location, however testes for Apple and London.
    */
   func testCommonFlow() {
-    XCUIDevice.sharedDevice().orientation = .Portrait
+    XCUIDevice.shared().orientation = .portrait
     
     let app = XCUIApplication()
     let showmenuButton = app.buttons["ShowMenu"]
@@ -47,12 +47,12 @@ class SwiftWeatherUITests: XCTestCase {
     
     let addButton = tablesQuery.buttons["Add"]
     addButton.tap()
-    tablesQuery.searchFields.containingType(.Button, identifier:"Clear text").element
+    tablesQuery.searchFields.containing(.button, identifier:"Clear text").element
     
     let searchBar = tablesQuery.searchFields.allElementsBoundByIndex[0]
     searchBar.typeText("Ireland Dublin\n")
     
-    let dublinStaticText = tablesQuery.cells.staticTexts["Dublin(Ireland)"]
+    let dublinStaticText = tablesQuery.cells.staticTexts["Dublin, Ireland"]
     
     dublinStaticText.tap()
     showmenuButton.tap()
@@ -63,19 +63,19 @@ class SwiftWeatherUITests: XCTestCase {
     showmenuButton.tap()
     
     editButton.tap()
-    let deleteDublinButton = tablesQuery.buttons["Delete Dublin(Ireland)"]
+    let deleteDublinButton = tablesQuery.buttons["Delete Dublin, Ireland"]
     deleteDublinButton.tap()
     let deleteButton = tablesQuery.buttons["Delete"]
     deleteButton.tap()
     addButton.tap()
     searchBar.typeText("Glasgow\n")
-    let glasgowStaticText = tablesQuery.cells.staticTexts["Glasgow(United Kingdom)"]
+    let glasgowStaticText = tablesQuery.cells.staticTexts["Glasgow, United Kingdom"]
     glasgowStaticText.tap()
     showmenuButton.tap()
     glasgowStaticText.tap()
     showmenuButton.tap()
     editButton.tap()
-    let deleteGlasgowButton = tablesQuery.buttons["Delete Glasgow(United Kingdom)"]
+    let deleteGlasgowButton = tablesQuery.buttons["Delete Glasgow, United Kingdom"]
     deleteGlasgowButton.tap()
     glasgowStaticText.tap()
     

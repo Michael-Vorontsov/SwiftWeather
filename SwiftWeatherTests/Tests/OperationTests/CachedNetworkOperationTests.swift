@@ -24,11 +24,11 @@ class CachedNetworkOperationTests: XCTestCase {
     }
     
     //Clear cache directory
-    let fileManager = NSFileManager.defaultManager()
-    let cacheDirectory = NSFileManager.applicationCachesDirectory
-    if  let content = try? fileManager.contentsOfDirectoryAtURL(cacheDirectory, includingPropertiesForKeys: nil, options: NSDirectoryEnumerationOptions(rawValue: 0)) {
+    let fileManager = FileManager.default
+    let cacheDirectory = FileManager.applicationCachesDirectory
+    if  let content = try? fileManager.contentsOfDirectory(at: cacheDirectory, includingPropertiesForKeys: nil, options: FileManager.DirectoryEnumerationOptions(rawValue: 0)) {
       for file in content {
-        _ = try? fileManager.removeItemAtURL(file)
+        _ = try? fileManager.removeItem(at: file)
       }
     }
     
@@ -39,17 +39,17 @@ class CachedNetworkOperationTests: XCTestCase {
     super.tearDown()
   }
   
-  private func stubMock() {
-    stub(isHost("stubbed_request.com")) { _ in
-      let JSONObject = ["key": 1]
-      return OHHTTPStubsResponse(JSONObject: JSONObject, statusCode: 200, headers: nil).requestTime(0.1, responseTime: 0.1)
+  fileprivate func stubMock() {
+    stub(condition: isHost("stubbed_request.com")) { _ in
+      let jsonObject = ["key": 1]
+      return OHHTTPStubsResponse(jsonObject: jsonObject, statusCode: 200, headers: nil).requestTime(0.1, responseTime: 0.1)
     }
   }
   
-  private func stubError() {
-    stub(isHost("stubbed_request.com")) { _ in
-      let JSONObject = ["error": 0]
-      return OHHTTPStubsResponse(JSONObject: JSONObject, statusCode: 500, headers: nil).requestTime(0.1, responseTime: 0.1)
+  fileprivate func stubError() {
+    stub(condition: isHost("stubbed_request.com")) { _ in
+      let jsonObject = ["error": 0]
+      return OHHTTPStubsResponse(jsonObject: jsonObject, statusCode: 500, headers: nil).requestTime(0.1, responseTime: 0.1)
     }
   }
   
@@ -57,13 +57,13 @@ class CachedNetworkOperationTests: XCTestCase {
     stubMock()
     let operation = CachedNetworkDataRetrievalOperation()
     operation.cache = false
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       
       XCTAssertTrue(success)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
     XCTAssertNotNil(operation.convertedObject)
     if let convertedObject = operation.convertedObject as? [String : Int] {
       XCTAssertEqual(convertedObject["key"], 1)
@@ -76,36 +76,36 @@ class CachedNetworkOperationTests: XCTestCase {
     stubError()
     let operation = CachedNetworkDataRetrievalOperation()
     operation.cache = false
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       XCTAssertFalse(success)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
   }
   
   func testOperationErrorWithCache() {
     stubError()
     let operation = CachedNetworkDataRetrievalOperation()
     operation.cache = true
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       XCTAssertFalse(success)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
   }
   
   func testOperationWithCache() {
     stubMock()
     let operation = CachedNetworkDataRetrievalOperation()
     operation.cache = true
-    let exp = expectationWithDescription("Operation expectation")
+    let exp = expectation(description: "Operation expectation")
     manager.addOperations([operation]) { (success, results, errors) in
       XCTAssertTrue(success)
       exp.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
     XCTAssertNotNil(operation.convertedObject)
     
     
@@ -120,23 +120,23 @@ class CachedNetworkOperationTests: XCTestCase {
     
     let nonCachedOperation = CachedNetworkDataRetrievalOperation()
     nonCachedOperation.cache = false
-    let exp2 = expectationWithDescription("Operation expectation")
+    let exp2 = expectation(description: "Operation expectation")
     manager.addOperations([nonCachedOperation]) { (success, results, errors) in
       XCTAssertFalse(success)
       exp2.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
     XCTAssertNil(nonCachedOperation.convertedObject)
     
     
     let cachedOperation = CachedNetworkDataRetrievalOperation()
     cachedOperation.cache = true
-    let exp3 = expectationWithDescription("Operation expectation")
+    let exp3 = expectation(description: "Operation expectation")
     manager.addOperations([cachedOperation]) { (success, results, errors) in
       XCTAssertTrue(success)
       exp3.fulfill()
     }
-    waitForExpectationsWithTimeout(60.0, handler: nil)
+    waitForExpectations(timeout: 60.0, handler: nil)
     
     if let convertedObject = cachedOperation.convertedObject as? [String : Int] {
       XCTAssertEqual(convertedObject["key"], 1)

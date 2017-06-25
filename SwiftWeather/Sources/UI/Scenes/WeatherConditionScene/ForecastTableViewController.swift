@@ -38,19 +38,19 @@ class ForecastTableViewController: UITableViewController, DataPresenter, DataReq
     }
   }
   
-  lazy var dateFormatter:NSDateFormatter = {
-    let dateFormatter = NSDateFormatter()
-    dateFormatter.dateFormat = NSDateFormatter.dateFormatFromTemplate(Consts.dateFormateTemplate, options: 0, locale: NSLocale.currentLocale())
+  lazy var dateFormatter:DateFormatter = {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = DateFormatter.dateFormat(fromTemplate: Consts.dateFormateTemplate, options: 0, locale: Locale.current)
     return dateFormatter
   }()
   
-  lazy var resultsController:NSFetchedResultsController! = {
+  lazy var resultsController:NSFetchedResultsController<DailyForecast>! = {
     guard let context = self.coreDataManager?.mainContext ,
       let region = self.selectedRegion else {
         return nil
     }
     
-    let request = NSFetchRequest(entityName: DailyForecast.entityName)
+    let request = NSFetchRequest<DailyForecast>(entityName: DailyForecast.entityName)
     request.predicate = NSPredicate(format: Consts.predicate, region, NSDate())
     request.sortDescriptors = [NSSortDescriptor(key: Consts.sortKey, ascending: true)]
     
@@ -77,11 +77,11 @@ extension ForecastTableViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     let refreshControl = UIRefreshControl()
-    refreshControl.addTarget(self, action: #selector(refresh(_:)), forControlEvents: .ValueChanged)
+    refreshControl.addTarget(self, action: #selector(refresh(_:)), for: .valueChanged)
     self.refreshControl = refreshControl
   }
   
-  @IBAction func refresh(sender:AnyObject) {
+  @IBAction func refresh(_ sender:AnyObject) {
     guard let name = selectedRegion?.name else {
       self.refreshControl?.endRefreshing()
       return
@@ -96,32 +96,37 @@ extension ForecastTableViewController {
 //MARK: -UITableViewDataSource
 extension ForecastTableViewController {
   
-  override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    if let resultsCount = resultsController?.fetchedObjects?.count where resultsCount > 0 {
+  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    if let resultsCount = resultsController?.fetchedObjects?.count, resultsCount > 0 {
       tableView.backgroundView = nil
       return resultsCount
     }
-    let label = UILabel(frame: view.bounds)
-    label.font = UIFont.schemeBodyFont
-    label.text = NSLocalizedString("No forecast available now.\n Try again later", comment: "")
-    label.autoresizingMask = [.FlexibleHeight, .FlexibleWidth]
-    label.numberOfLines = 0
-    label.textAlignment = .Center
-    tableView.backgroundView = label
+
+    // Show placholder if no forecast available.
+    if nil == tableView.backgroundView {
+      let label = UILabel(frame: view.bounds)
+      label.font = UIFont.schemeBodyFont
+      label.text = NSLocalizedString("No forecast available now.\n Try again later", comment: "")
+      label.autoresizingMask = [.flexibleHeight, .flexibleWidth]
+      label.numberOfLines = 0
+      label.textAlignment = .center
+      tableView.backgroundView = label
+    }
     
     return  0
   }
   
-  override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-    let cell = tableView.dequeueReusableCellWithIdentifier(Consts.cellId, forIndexPath: indexPath)
-    guard let forecast = resultsController?.objectAtIndexPath(indexPath) as? DailyForecast,
+  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    let cell = tableView.dequeueReusableCell(withIdentifier: Consts.cellId, for: indexPath)
+    guard
+      let forecast = resultsController?.object(at: indexPath),
       let date = forecast.date
       else {
         cell.textLabel?.text = "Error: unable to fetch DailyForecast at indexpat:\(indexPath)"
         return cell
     }
     
-    cell.textLabel?.text = dateFormatter.stringFromDate(date)
+    cell.textLabel?.text = dateFormatter.string(from: date)
     cell.detailTextLabel?.text = forecast.descriptionString()
     return cell
   }
@@ -131,24 +136,24 @@ extension ForecastTableViewController {
 //MARK: -NSFetchedResultsControllerDelegate
 extension ForecastTableViewController: NSFetchedResultsControllerDelegate {
   
-  func controllerWillChangeContent(controller: NSFetchedResultsController) {
+  func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
     tableView.beginUpdates()
   }
   
-  func controllerDidChangeContent(controller: NSFetchedResultsController) {
+  func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
     tableView.endUpdates()
   }
   
-  func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+  func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
     switch type {
-    case .Insert:
-      tableView.insertRowsAtIndexPaths([newIndexPath!], withRowAnimation: .Left)
-    case .Delete:
-      tableView.deleteRowsAtIndexPaths([indexPath!], withRowAnimation: .Left)
-    case .Update:
-      tableView.reloadRowsAtIndexPaths([indexPath!], withRowAnimation: .Fade)
-    case .Move:
-      tableView.reloadRowsAtIndexPaths([indexPath!, newIndexPath!], withRowAnimation: .Right)
+    case .insert:
+      tableView.insertRows(at: [newIndexPath!], with: .left)
+    case .delete:
+      tableView.deleteRows(at: [indexPath!], with: .left)
+    case .update:
+      tableView.reloadRows(at: [indexPath!], with: .fade)
+    case .move:
+      tableView.reloadRows(at: [indexPath!, newIndexPath!], with: .right)
     }
   }
   

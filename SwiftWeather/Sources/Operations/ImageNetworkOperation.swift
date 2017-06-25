@@ -27,7 +27,7 @@ class ImageNetworkOperation: CachedNetworkDataRetrievalOperation {
     cache = true
     // If path contains ':/' then it is a full address,
     // else it is a local address and should by added to endpoint
-    if imagePath.containsString(":/") {
+    if imagePath.contains(":/") {
       requestEndPoint = imagePath
     } else {
       requestPath = imagePath
@@ -37,12 +37,12 @@ class ImageNetworkOperation: CachedNetworkDataRetrievalOperation {
   
   // Convert and parse data
   override func convertData() throws {
-    stage = .Converting
+    stage = .converting
     guard let data = data,
       let image = UIImage(data: data) else {
-        throw DataRetrievalOperationError.WrongDataFormat(error: nil)
+        throw DataRetrievalOperationError.wrongDataFormat(error: nil)
     }
-    stage = .Parsing
+    stage = .parsing
     results = [image]
   }
   

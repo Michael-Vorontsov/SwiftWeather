@@ -19,18 +19,18 @@ class CachedNetworkDataRetrievalOperation: NetworkDataRetrievalOperation {
   var cache:Bool = false
   override func retriveData() throws {
     
-    stage = .Requesting
+    stage = .requesting
     
     var shouldRequestFromNetwork = true
-    var cacheURL:NSURL? = nil
+    var cacheURL:URL? = nil
     
     //Try to retrive data from cache first
-    if let request = request where cache {
-      let cacheName = String(request.hash)
-      let cacheDirectory = NSFileManager.applicationCachesDirectory
-      let fileURL = cacheDirectory.URLByAppendingPathComponent(cacheName)
+    if let request = request, cache {
+      let cacheName = String((request as NSURLRequest).hash)
+      let cacheDirectory = FileManager.applicationCachesDirectory
+      let fileURL = cacheDirectory.appendingPathComponent(cacheName)
       cacheURL = fileURL
-      if let content = NSData(contentsOfURL: fileURL) {
+      if let content = try? Data(contentsOf: fileURL) {
         data = content
         shouldRequestFromNetwork = false
       }
@@ -40,11 +40,11 @@ class CachedNetworkDataRetrievalOperation: NetworkDataRetrievalOperation {
     if shouldRequestFromNetwork {
       try super.retriveData()
       // And save it to cahce if needed
-      if let fileURL = cacheURL, let fileData = data where false == cancelled {
+      if let fileURL = cacheURL, let fileData = data, false == isCancelled {
         do {
-          try fileData.writeToURL(fileURL, options: .DataWritingAtomic)
+          try fileData.write(to: fileURL, options: .atomic)
         } catch {
-          throw DataRetrievalOperationError.InternalError(error: error)
+          throw DataRetrievalOperationError.internalError(error: error)
         }
       }
     }

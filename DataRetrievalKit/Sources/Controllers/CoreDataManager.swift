@@ -10,15 +10,15 @@ import UIKit
 import CoreData
 
 enum CoreDataError : Int {
-  case Unknown = 1000
-  case StoreCoordinatorCreation
-  case SavingChanges
+  case unknown = 1000
+  case storeCoordinatorCreation
+  case savingChanges
 }
 
 private let Consts = (
-  defaultDBName : "SwiftWeatherDB",
-  defaultModel : "SwiftWeather",
-  errorDomain : "error.weather.database"
+  errorDomain : "error.weather.database",
+  // Tuples expect to have at leasst 2 keypairs
+  placeholder : false
 )
 
 /**
@@ -31,7 +31,7 @@ public protocol DataPresenter:NSObjectProtocol {
 /**
  Class responsible for storing and retriving data from local database
  */
-public class CoreDataManager: NSObject {
+open class CoreDataManager: NSObject {
   
   /**
    CoreDataManager error domain
@@ -39,61 +39,56 @@ public class CoreDataManager: NSObject {
   static let errorDomain = Consts.errorDomain
   
   /**
-   Shared instance of Data Manager be accessible in different part of application
-   */
-  static let sharedManager = CoreDataManager()
-  
-  /**
    Init CoreDataManager with specified database name
    */
-  public init(databaseName aDatabaseName: String = Consts.defaultDBName, modelName: String = Consts.defaultModel, bundle:NSBundle? = nil) {
-    databaseName = aDatabaseName
+  public init(databaseName: String, modelName: String, bundle:Bundle = Bundle.main) {
+    self.databaseName = databaseName
     dataModel = modelName
-    super.init()
     modelBundle = bundle
+    super.init()
   }
   
   /**
    NSManagedObject context dedicated for UI operations working on main thread
    */
-  public lazy var mainContext: NSManagedObjectContext = {
-    var managedObjectContext = NSManagedObjectContext(concurrencyType: .MainQueueConcurrencyType)
-    managedObjectContext.parentContext = self.persistentContext
+  open lazy var mainContext: NSManagedObjectContext = {
+    var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    managedObjectContext.parent = self.persistentContext
     return managedObjectContext
   }()
   
   /**
    NSManagedObject context dedicated for synchronous data parsing operations working on background thread
    */
-  public lazy var dataContext: NSManagedObjectContext = {
+  open lazy var dataContext: NSManagedObjectContext = {
     return self.backContext()
   }()
   
   /**
    Creating separate background context to above main context to perfrom backgound data operations
    */
-  public func backContext() -> NSManagedObjectContext {
-    let managedObjectContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
-    managedObjectContext.parentContext = self.mainContext
+  open func backContext() -> NSManagedObjectContext {
+    let managedObjectContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+    managedObjectContext.parent = self.mainContext
     return managedObjectContext
   }
   
   /**
    Delete sqlite database file from disk
    */
-  public func wipeDatabase(reloadStores reloadStores:Bool = true) {
+  open func wipeDatabase(reloadStores:Bool = true) {
     do {
       for store in persistentStoreCoordinator.persistentStores {
-        let storeURL = store.URL!
-        try persistentStoreCoordinator.removePersistentStore(store)
-        _ = try NSFileManager.defaultManager().removeItemAtURL(storeURL)
+        let storeURL = store.url!
+        try persistentStoreCoordinator.remove(store)
+        _ = try FileManager.default.removeItem(at: storeURL)
       }
       
       persistentContext.reset()
       mainContext.reset()
       if true == reloadStores {
-        let url = NSFileManager.applicationDocumentsDirectory.URLByAppendingPathComponent("\(self.databaseName).sqlite")
-        try persistentStoreCoordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: url, options: nil)
+        let url = FileManager.applicationDocumentsDirectory.appendingPathComponent("\(self.databaseName).sqlite")
+        try persistentStoreCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: nil)
       }
     } catch {
       print("Error occured while trying to wipe persistent store")
@@ -103,37 +98,35 @@ public class CoreDataManager: NSObject {
 
   // MARK: - Private methods
   
-  private let databaseName: String
-  private let dataModel: String
-  private lazy var modelBundle: NSBundle! =  {
-   return NSBundle.mainBundle()
-  }()
+  fileprivate let databaseName: String
+  fileprivate let dataModel: String
+  fileprivate let modelBundle: Bundle
   
-  public private(set) lazy var managedObjectModel: NSManagedObjectModel = {
-    let modelURL = self.modelBundle.URLForResource(self.dataModel, withExtension: "momd")!
-    let model = NSManagedObjectModel(contentsOfURL: modelURL)
+  open fileprivate(set) lazy var managedObjectModel: NSManagedObjectModel = {
+    let modelURL = self.modelBundle.url(forResource: self.dataModel, withExtension: "momd")!
+    let model = NSManagedObjectModel(contentsOf: modelURL)
     return model!
   }()
   
-  public private(set)  lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
+  open fileprivate(set)  lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
     let coordinator = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
-    let url = NSFileManager.applicationDocumentsDirectory.URLByAppendingPathComponent("\(self.databaseName).sqlite")
+    let url = FileManager.applicationDocumentsDirectory.appendingPathComponent("\(self.databaseName).sqlite")
     var failureReason = "There was an error creating or loading the application's saved data."
     do {
-      try coordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: url, options: nil)
+      try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: nil)
     } catch {
       // Report any error we got.
       var dict = [String: AnyObject]()
-      dict[NSLocalizedDescriptionKey] = "Failed to initialize the application's saved data"
-      dict[NSLocalizedFailureReasonErrorKey] = failureReason
+      dict[NSLocalizedDescriptionKey] = "Failed to initialize the application's saved data" as AnyObject
+      dict[NSLocalizedFailureReasonErrorKey] = failureReason as AnyObject
       dict[NSUnderlyingErrorKey] = error as NSError
-      let wrappedError = NSError(domain: CoreDataManager.errorDomain, code: CoreDataError.StoreCoordinatorCreation.rawValue, userInfo: dict)
+      let wrappedError = NSError(domain: CoreDataManager.errorDomain, code: CoreDataError.storeCoordinatorCreation.rawValue, userInfo: dict)
       print("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
       
       // If error - try to delete database and create it from scratch
       do {
-        try NSFileManager.defaultManager().removeItemAtURL(url)
-        try coordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: url, options: nil)
+        try FileManager.default.removeItem(at: url)
+        try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: nil)
       } catch {
         print("Error occured while trying recreate database")
         abort();
@@ -145,9 +138,9 @@ public class CoreDataManager: NSObject {
   /**
    Private context working in background thread with persisten store directly
    */
-  private lazy var persistentContext: NSManagedObjectContext = {
+  fileprivate lazy var persistentContext: NSManagedObjectContext = {
     let coordinator = self.persistentStoreCoordinator
-    var managedObjectContext = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+    var managedObjectContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     managedObjectContext.persistentStoreCoordinator = coordinator
     return managedObjectContext
   }()

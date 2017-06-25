@@ -8,70 +8,67 @@
 
 import Foundation
 
-private let consts = (
-  errorDomain : "operation"
-)
 /**
  Most basic operation. Used as abstract class for all Data Retrieval operations.
  */
-public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol {
+open class DataRetrievalOperation: Operation, DataRetrievalOperationProtocol {
   
-  public var force:Bool = false
+  open var force:Bool = false
   
-  public var status: OperationStatus = .Created
-  public var stage: OperationStage = .Awaiting
-  public var convertedObject: AnyObject?
-  public var data: NSData? = nil
-  public var error:ErrorType? = nil
-  public var results:[AnyObject]? = nil
+  open var status: OperationStatus = .created
+  open var stage: OperationStage = .awaiting
+  open var convertedObject: AnyObject?
+  open var data: Data? = nil
+  open var error:Error? = nil
+  open var results:[AnyObject]? = nil
   
-  public func prepareForRetrieval() throws {}
+  open func prepareForRetrieval() throws {}
   
-  public func retriveData() throws {}
+  open func retriveData() throws {}
   
-  public func convertData() throws {}
+  open func convertData() throws {}
   
-  public func parseData() throws {}
+  open func parseData() throws {}
   
-  public func breakWithNSError(error: NSError) {
-    breakWithError(DataRetrievalOperationError.WrappedNSError(error: error))
+  open func breakWithNSError(_ error: NSError) {
+    breakWithError(DataRetrievalOperationError.wrappedNSError(error: error))
   }
 
-  public func breakWithError(error: ErrorType) {
-    guard stage != .Completed && status != .Completed else {
+  open func breakWithError(_ error: Error) {
+    guard stage != .completed && status != .completed else {
       return
     }
     self.error = error
-    status = .Error
+    status = .error
     self.cancel()
   }
   
-  override public func main(){
+  override open func main(){
     
-    guard false == cancelled else { return }
+    guard false == isCancelled else { return }
     
     // If not forced and any parent operation is canceled - then cancel
     if false == force {
       
       // Duplicate operations should have original operation as last dependant operation
       // so it should extract stage, error, results, etc. from it and return
-      if .Duplicate ==  self.status, let original = dependencies.last as? DataRetrievalOperation {
+      if .duplicate ==  self.status, let original = dependencies.last as? DataRetrievalOperation {
         results = original.results
         stage = original.stage
         status = original.status
         error = original.error
-        if original.cancelled {
+        if original.isCancelled {
           cancel()
         }
         return
       }
       
       for operation in dependencies {
-        if true == operation.cancelled || false == operation.finished{
+        if true == operation.isCancelled || false == operation.isFinished{
           cancel()
           return;
         }
-        if let operation = operation as? DataRetrievalOperation where operation.status  != .Completed && operation.stage  != .Completed {
+        if let operation = operation as? DataRetrievalOperation, operation.status  != .completed && operation.stage  != .completed {
           cancel()
           return;
         }
@@ -79,39 +76,39 @@ public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol
     }
     
     do {
-      guard false == cancelled && status == .Queued && stage == .Awaiting else {return}
-      status = .Executing
-      stage = .Preparing
+      guard false == isCancelled && status == .queued && stage == .awaiting else {return}
+      status = .executing
+      stage = .preparing
       try prepareForRetrieval()
-      guard false == cancelled else { return }
-      stage = .Requesting
+      guard false == isCancelled else { return }
+      stage = .requesting
       try retriveData()
-      guard false == cancelled else { return }
-      stage = .Converting
+      guard false == isCancelled else { return }
+      stage = .converting
       try convertData()
-      guard false == cancelled else { return }
-      stage = .Parsing
+      guard false == isCancelled else { return }
+      stage = .parsing
       try parseData()
       
-      if .Executing == status {
-        status = .Completed
-        stage = .Completed
+      if .executing == status {
+        status = .completed
+        stage = .completed
       }
     } catch {
-      status = .Error
+      status = .error
       self.error = error
     }
   }
   
-  override public func cancel() {
-    if  .Error != status {
-      status = .Cancelled
+  override open func cancel() {
+    if  .error != status {
+      status = .cancelled
     }
     super.cancel()
   }
   
   // Compare operations by name hash
-  override public var hash: Int {
+  override open var hash: Int {
     
     
     
@@ -131,9 +128,9 @@ public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol
     return hash
 }
   
-  override public func isEqual(object: AnyObject?) -> Bool {
+  override open func isEqual(_ object: Any?) -> Bool {
     if let object = object {
-      return self.hash == object.hash
+      return self.hash == (object as AnyObject).hash
     }
     return false
   }
@@ -143,7 +140,7 @@ public class DataRetrievalOperation: NSOperation, DataRetrievalOperationProtocol
 extension NSObjectProtocol where Self:DataRetrievalOperation {
   
   var operationFullName: String {
-    return NSStringFromClass(Self) + "." + (name ?? "")
+    return NSStringFromClass(Self.self) + "." + (name ?? "")
   }
   
 }

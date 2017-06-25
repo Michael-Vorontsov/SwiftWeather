@@ -35,10 +35,10 @@ public enum NetworkParameterEncoding:String {
  */
 public protocol NetworkDataRetrievalOperationProtocol: DataRetrievalOperationProtocol {
   
-  var task: NSURLSessionTask? {get set}
-  var session:NSURLSession? {get set}
+  var task: URLSessionTask? {get set}
+  var session:URLSession? {get set}
   
-  var request: NSURLRequest? {get set}
+  var request: URLRequest? {get set}
   var requestEndPoint: String? {get set}
   var requestPath: String? {get set}
   
@@ -48,6 +48,6 @@ public protocol NetworkDataRetrievalOperationProtocol: DataRetrievalOperationPro
   var requestMethod: NetworkRequestMethod {get set}
   var requestParametersEncoding: NetworkParameterEncoding {get set}
   
-  var response:NSURLResponse? {get set}
+  var response:URLResponse? {get set}
 }
 

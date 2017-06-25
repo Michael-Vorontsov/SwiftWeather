@@ -30,7 +30,7 @@ class ForecastDataOperation: NetworkDataRetrievalOperation, ObjectBuildeOperatio
   
   var objectBuilder : ObjectBuilder!
   
-  private(set) var querry:String! = nil
+  fileprivate(set) var querry:String! = nil
   let regionID:NSManagedObjectID?
   
   init(regionName:String) {
@@ -43,31 +43,31 @@ class ForecastDataOperation: NetworkDataRetrievalOperation, ObjectBuildeOperatio
   init(region:Region) {
     regionID = region.objectID
     super.init()
-    self.name = String(region.objectID)
+    self.name = String(describing: region.objectID)
   }
 
   init(regionIdentifier:NSManagedObjectID) {
     regionID = regionIdentifier
     super.init()
-    self.name = String(regionIdentifier)
+    self.name = String(describing: regionIdentifier)
   }
 
   
   override func prepareForRetrieval() throws {
     
-    if let regionID = regionID where nil == querry {
+    if let regionID = regionID, nil == querry {
       let context = objectBuilder.coreDataManager.dataContext
-      context.performBlockAndWait({
-        if let regionToUpdate = context.objectWithID(regionID) as? Region {
+      context.performAndWait({
+        if let regionToUpdate = context.object(with: regionID) as? Region {
           self.querry = regionToUpdate.name
         }
       })
     }
     
     requestPath = Consts.path
-    requestParameters[Consts.requestKeys.querry] = querry
-    requestParameters[Consts.requestKeys.days] = Consts.range
-    requestParameters[Consts.requestKeys.format] = Consts.dataFormat
+    requestParameters[Consts.requestKeys.querry] = querry as AnyObject
+    requestParameters[Consts.requestKeys.days] = Consts.range as AnyObject
+    requestParameters[Consts.requestKeys.format] = Consts.dataFormat as AnyObject
     
     try super.prepareForRetrieval()
   }
@@ -75,17 +75,17 @@ class ForecastDataOperation: NetworkDataRetrievalOperation, ObjectBuildeOperatio
   override func parseData() throws {
     guard let objectBuilder = objectBuilder,
       let convertedObject = convertedObject else {
-        throw DataRetrievalOperationError.InvalidParameter(parameterName: "convertedObject")
+        throw DataRetrievalOperationError.invalidParameter(parameterName: "convertedObject")
     }
     
     guard let dictionaryInfo = convertedObject as? [String : AnyObject] else {
-      throw DataRetrievalOperationError.InvalidDataForKey(key: "root", value: nil)
+      throw DataRetrievalOperationError.invalidDataForKey(key: "root", value: nil)
     }
     
     do {
       self.results = try objectBuilder.buildRegion(dictionaryInfo,updateId: regionID)
     } catch {
-      throw DataRetrievalOperationError.InternalError(error: error)
+      throw DataRetrievalOperationError.internalError(error: error)
     }
   }
   

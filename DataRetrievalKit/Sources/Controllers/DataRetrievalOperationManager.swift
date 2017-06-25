@@ -7,6 +7,30 @@
 //
 
 import Foundation
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 // TODO: Remove hardcoded constants to app delegate
 private let Consts = (
@@ -19,18 +43,18 @@ public protocol DataRequestor:NSObjectProtocol {
   var dataOperationManager:DataRetrievalOperationManager! {get set}
 }
 
-public typealias DataRetrivalCompetionBlock = (success: Bool, results: [AnyObject], errors: [ErrorType]?) -> Void
+public typealias DataRetrivalCompetionBlock = (_ success: Bool, _ results: [AnyObject], _ errors: [Error]?) -> Void
 
 /**
  Class responsible for retriving data from remote servever.
  
  For each data type specific operation should be created.
  */
-public class DataRetrievalOperationManager: NSObject {
+open class DataRetrievalOperationManager: NSObject {
   
-  public let endPoint:String
+  open let endPoint:String
   
-  public var accessKey:String? = nil
+  open var accessKey:String? = nil
   
   public init(remote:String, accessKey:String? = nil){
     endPoint = remote
@@ -38,40 +62,40 @@ public class DataRetrievalOperationManager: NSObject {
     super.init()
   }
   
-  public lazy var session:NSURLSession = {
-    return NSURLSession.sharedSession()
+  open lazy var session:URLSession = {
+    return URLSession.shared
   }()
   
   public override convenience init() {
     self.init(remote:Consts.defalutBackend)
   }
   
-  public var coreDataManager:CoreDataManager? = nil
+  open var coreDataManager:CoreDataManager? = nil
   
-  public var objectBuilder:ObjectBuilder? = nil
+  open var objectBuilder:ObjectBuilder? = nil
   
   /**
    Shared instance of Data Retrieval Operation Manager be accessible in different part of application
    */
-  public static let sharedManager = DataRetrievalOperationManager()
+  open static let sharedManager = DataRetrievalOperationManager()
   
   /**
    Operation queue
    */
-  private lazy var operationQueue: NSOperationQueue = {
-    return NSOperationQueue()
+  fileprivate lazy var operationQueue: OperationQueue = {
+    return OperationQueue()
   }()
   
-  var operations:[NSOperation] {
+  var operations:[Operation] {
     return operationQueue.operations
   }
   
-  public var suspended:Bool {
+  open var suspended:Bool {
     set {
-      operationQueue.suspended = newValue
+      operationQueue.isSuspended = newValue
     }
     get {
-      return operationQueue.suspended
+      return operationQueue.isSuspended
     }
   }
   
@@ -83,21 +107,21 @@ public class DataRetrievalOperationManager: NSObject {
   /**
    Helpers function for creating completion block operation for specififc operations
    */
-  private func completionBlockOperationForOperations(operations:[NSOperation],
-                                                     completionBLock: DataRetrivalCompetionBlock?) -> NSOperation {
+  fileprivate func completionBlockOperationForOperations(_ operations:[Operation],
+                                                     completionBLock: DataRetrivalCompetionBlock?) -> Operation {
     
-    let completionOperation = NSBlockOperation {() -> Void in
+    let completionOperation = BlockOperation {() -> Void in
       var success = true
-      var errors:[ErrorType]? = nil
+      var errors:[Error]? = nil
       var results:[AnyObject] = []
       
       for operation in operations {
-        if  true != operation.finished || true == operation.cancelled {
+        if  true != operation.isFinished || true == operation.isCancelled {
           success = false
         }
         if let operation = operation as? DataRetrievalOperationProtocol {
           
-          if operation.status != .Completed {
+          if operation.status != .completed {
             if let opError = operation.error {
               if nil == errors {
                 errors = [NSError]()
@@ -107,17 +131,17 @@ public class DataRetrievalOperationManager: NSObject {
             success = false
           }
           if operation.results?.count > 0 {
-            results.appendContentsOf(operation.results!)
+            results.append(contentsOf: operation.results!)
           }
         }
       }
       
       if let completionBLock = completionBLock {
-        NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+        OperationQueue.main.addOperation({ () -> Void in
           for operation in operations {
             print("Completion block for: \(operation.name ?? "-")")
           }
-          completionBLock(success: success, results: results, errors: errors)
+          completionBLock(success, results, errors)
         })
       }
     }
@@ -127,23 +151,23 @@ public class DataRetrievalOperationManager: NSObject {
   /**
    Configure operation, add auth headers, endpoints, sesions etc.
    */
-  public func prepareOperation(operation:NSOperation) {
+  open func prepareOperation(_ operation:Operation) {
     
     //Setup endpoints for all operations
-    if let operation = operation as? NetworkDataRetrievalOperationProtocol where nil == operation.requestEndPoint {
+    if let operation = operation as? NetworkDataRetrievalOperationProtocol, nil == operation.requestEndPoint {
       operation.requestEndPoint = self.endPoint
       operation.session = session
     }
     
-    if let operation = operation as? ManagedObjectRetrievalOperationProtocol where nil == operation.dataManager {
+    if let operation = operation as? ManagedObjectRetrievalOperationProtocol, nil == operation.dataManager {
       operation.dataManager = self.coreDataManager
     }
     
-    if let operation = operation as? AccessKeyOperationProtocol, let accessKey = accessKey where  nil == operation.requestParameters[Consts.accessKeyParam] {
-      operation.requestParameters[Consts.accessKeyParam] = accessKey
+    if let operation = operation as? AccessKeyOperationProtocol, let accessKey = accessKey,  nil == operation.requestParameters[Consts.accessKeyParam] {
+      operation.requestParameters[Consts.accessKeyParam] = accessKey as AnyObject
     }
     
-    if let operation = operation as? ObjectBuildeOperationProtocol where nil == operation.objectBuilder{
+    if let operation = operation as? ObjectBuildeOperationProtocol, nil == operation.objectBuilder{
       operation.objectBuilder = self.objectBuilder
     }
     
@@ -155,14 +179,14 @@ public class DataRetrievalOperationManager: NSObject {
    If equal operation already in queue -> then switch all dependecies including completion block to queued one,
    and mark operation as Duplicate
    */
-  public func addOperations(operations: [NSOperation],
-                            completionBLock:DataRetrivalCompetionBlock? = nil) -> Void {
+  open func addOperations(
+    _ operations: [Operation],
+    completionBLock:DataRetrivalCompetionBlock? = nil
+  ) -> Void {
     
-    dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) { [unowned self] in
-      
-      
+    DispatchQueue.global(qos: .default).sync { [unowned self] in
       let completionOperation = self.completionBlockOperationForOperations(operations, completionBLock: completionBLock)
-      var operationToAdd = [NSOperation]()
+      var operationToAdd = [Operation]()
       operationToAdd.append(completionOperation)
       let queuedOperations = self.operations as NSArray
       
@@ -171,25 +195,25 @@ public class DataRetrievalOperationManager: NSObject {
         completionOperation.addDependency(operation)
         
         // Skip is not in Created state
-        if let operation = operation as? DataRetrievalOperationProtocol where operation.status != .Created {
+        if let operation = operation as? DataRetrievalOperationProtocol, operation.status != .created {
           continue
         }
         
         operationToAdd.append(operation)
         
         //TODO: Complete
-        let indexOfSameOperation = queuedOperations.indexOfObject(operation)
+        let indexOfSameOperation = queuedOperations.index(of: operation)
         
         // Is similar operation already in queue
-        if indexOfSameOperation != NSNotFound, let sameOperation = queuedOperations[indexOfSameOperation] as? NSOperation {
+        if indexOfSameOperation != NSNotFound, let sameOperation = queuedOperations[indexOfSameOperation] as? Operation {
           if let operation = operation as? DataRetrievalOperationProtocol {
-            operation.status = .Duplicate
+            operation.status = .duplicate
           }
           operation.addDependency(sameOperation)
         } else {
           self.prepareOperation(operation)
           if let operation = operation as? DataRetrievalOperationProtocol {
-            operation.status = .Queued
+            operation.status = .queued
           }
         }
         

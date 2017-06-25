@@ -37,12 +37,12 @@ class WeatherConditionController: UIViewController, DataRequestor, DataPresenter
     return AppDelegate.sharedAppDelegate.coreDataManager
   }()
   
-  lazy var resultsController:NSFetchedResultsController! = {
+  lazy var resultsController:NSFetchedResultsController<Region>! = {
     guard let context = self.coreDataManager?.mainContext else {
       return nil
     }
     
-    let request = NSFetchRequest(entityName: Region.entityName)
+    let request = NSFetchRequest<Region>(entityName: Region.entityName)
     request.sortDescriptors = [NSSortDescriptor(key: "isSelected", ascending: false), NSSortDescriptor(key: "isCurrent", ascending: true)]
     let resultsController = NSFetchedResultsController(
       fetchRequest: request,
@@ -117,24 +117,24 @@ extension WeatherConditionController {
     windLabel.font = UIFont.schemeBodyFont
   }
 
-  override func viewWillAppear(animated: Bool) {
+  override func viewWillAppear(_ animated: Bool) {
     
     super.viewWillAppear(animated)
     
-    selectedRegion = resultsController.fetchedObjects?.first as? Region
+    selectedRegion = resultsController.fetchedObjects?.first
     invalidateUI()
     updateBackgroundImage()
     
   }
   
-  override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-    if let destinationViewController = segue.destinationViewController as? DataRequestor {
+  override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    if let destinationViewController = segue.destination as? DataRequestor {
       destinationViewController.dataOperationManager = dataOperationManager
     }
-    if let destinationViewController = segue.destinationViewController as? DataPresenter {
+    if let destinationViewController = segue.destination as? DataPresenter {
       destinationViewController.coreDataManager = coreDataManager
     }
-    if let destinationViewController = segue.destinationViewController as? SelectedRegionPresenter {
+    if let destinationViewController = segue.destination as? SelectedRegionPresenter {
       destinationViewController.selectedRegion = selectedRegion
     }
   }
@@ -146,20 +146,20 @@ extension WeatherConditionController {
   
   func updateBackgroundImage() {
     let imageName = Const.backWallpapers[nextWallpaperImageIndex]
-    UIView.animateWithDuration(Const.wallpaperAnimation.duration, animations: {
+    UIView.animate(withDuration: Const.wallpaperAnimation.duration, animations: {
       self.backgroundImageView.alpha = 0.0
-    }) { (completed) in
+    }, completion: { (completed) in
       self.backgroundImageView.image = UIImage(named: imageName)
-      UIView.animateWithDuration(Const.wallpaperAnimation.duration) {
+      UIView.animate(withDuration: Const.wallpaperAnimation.duration, animations: {
         self.backgroundImageView.alpha = 1.0
-      }
-    }
+      }) 
+    }) 
     
     nextWallpaperImageIndex =  (nextWallpaperImageIndex + 1) % Const.backWallpapers.count
     let selector = #selector(updateBackgroundImage)
-    NSObject.cancelPreviousPerformRequestsWithTarget(self, selector: selector, object: nil)
+    NSObject.cancelPreviousPerformRequests(withTarget: self, selector: selector, object: nil)
     
-    performSelector(selector, withObject: true, afterDelay: Const.wallpaperAnimation.interval)
+    perform(selector, with: true, afterDelay: Const.wallpaperAnimation.interval)
   }
   
   func invalidateUI() {
@@ -172,13 +172,13 @@ extension WeatherConditionController {
       windLabel.text = conditions?.windSpeed?.stringValue
       pressureLabel.text = conditions?.pressure?.stringValue
       
-      if let windDir = conditions?.windDirection?.integerValue,
+      if let windDir = conditions?.windDirection?.intValue,
         let windDirection = WindDirection(rawValue:windDir),
         let windAngle = windDirection.angleRawValue {
-        windDirectionLabel.hidden = false
-        windDirectionLabel.transform = CGAffineTransformMakeRotation(CGFloat(windAngle))
+        windDirectionLabel.isHidden = false
+        windDirectionLabel.transform = CGAffineTransform(rotationAngle: CGFloat(windAngle))
       } else {
-        windDirectionLabel.hidden = true
+        windDirectionLabel.isHidden = true
       }
       
     } else {
@@ -198,7 +198,7 @@ extension WeatherConditionController {
 // MARK: -NSFetchedResultsControllerDelegate
 extension WeatherConditionController: NSFetchedResultsControllerDelegate {
   
-  func controllerDidChangeContent(controller: NSFetchedResultsController) {
+  func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
     self.selectedRegion = controller.fetchedObjects?.first as? Region
   }
 }

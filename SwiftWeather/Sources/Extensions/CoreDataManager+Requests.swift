@@ -12,12 +12,12 @@ import DataRetrievalKit
 
 extension CoreDataManager {
   
-  func requestWithRegionName(name:String) -> NSFetchRequest {
-    return self.managedObjectModel.fetchRequestFromTemplateWithName("CityByName", substitutionVariables: ["NAME" : name])!
+  func requestWithRegionName(_ name:String) -> NSFetchRequest<NSFetchRequestResult> {
+    return self.managedObjectModel.fetchRequestFromTemplate(withName: "CityByName", substitutionVariables: ["NAME" : name])!
   }
   
-  func requestCurrentRegion() -> NSFetchRequest {
-    return self.managedObjectModel.fetchRequestTemplateForName("CurrentRegion")!
+  func requestCurrentRegion() -> NSFetchRequest<NSFetchRequestResult> {
+    return self.managedObjectModel.fetchRequestTemplate(forName: "CurrentRegion")!
   }
   
 }

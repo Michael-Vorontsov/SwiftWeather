@@ -30,7 +30,7 @@ class SampleDataOperation: DataRetrievalOperation {
     // Add delay to make sure that operation not completed before cancel or error is called from test thread
     sleep(1)
     
-    guard false == cancelled else {
+    guard false == isCancelled else {
       return
     }
     
@@ -70,12 +70,12 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     let operation = SampleDataOperation()
     XCTAssertNotNil(operation)
-    XCTAssertEqual(operation.stage, OperationStage.Awaiting)
-    XCTAssertEqual(operation.status, OperationStatus.Created)
+    XCTAssertEqual(operation.stage, OperationStage.awaiting)
+    XCTAssertEqual(operation.status, OperationStatus.created)
     
     var completed:Bool = false
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation]) { (success, results, errors) -> Void in
       XCTAssertTrue(success)
@@ -94,7 +94,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       
       XCTAssertEqual(manager.operations.count, 0)
       
-      XCTAssertEqual(operation.stage, OperationStage.Completed)
+      XCTAssertEqual(operation.stage, OperationStage.completed)
       completed = true
       expct.fulfill()
     }
@@ -103,18 +103,14 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     XCTAssertFalse(completed)
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
-    
-    XCTAssertTrue(completed)
+    self.waitForExpectations(timeout: 30.0, handler: nil)
   }
   
   func testCoreDataOperation() {
     let operation = SampleCoreDataOperation()
     XCTAssertNotNil(operation)
     let manager:DataRetrievalOperationManager = DataRetrievalOperationManager(remote:"http://jsonplaceholder.typicode.com")
-    manager.coreDataManager = CoreDataManager()
+    manager.coreDataManager = CoreDataManager(databaseName: "TestDB", modelName: "TestModel")
     XCTAssertNil(operation.dataManager)
     manager.addOperations([operation], completionBLock: nil)
     XCTAssertNotNil(operation.dataManager)
@@ -133,31 +129,30 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     var completed:Bool = false
     
     operation1.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
-      XCTAssertNotEqual(operation3.status, OperationStatus.Completed)
-      XCTAssertEqual(operation1.status, OperationStatus.Completed)
+      XCTAssertEqual(operation3.status, OperationStatus.queued)
+      XCTAssertNotEqual(operation3.status, OperationStatus.completed)
+      XCTAssertEqual(operation1.status, OperationStatus.completed)
       completed1 = true;
     }
     
     operation2.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
-      
-      XCTAssertEqual(operation1.status, OperationStatus.Completed)
-      XCTAssertEqual(operation2.status, OperationStatus.Completed)
-      XCTAssertNotEqual(operation3.status, OperationStatus.Completed)
+      XCTAssertEqual(operation3.status, OperationStatus.queued)
+      XCTAssertEqual(operation1.status, OperationStatus.completed)
+      XCTAssertEqual(operation2.status, OperationStatus.completed)
+      XCTAssertNotEqual(operation3.status, OperationStatus.completed)
       completed2 = true;
     }
     
     operation3.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Completed)
-      XCTAssertEqual(operation3.stage, OperationStage.Completed)
+      XCTAssertEqual(operation3.status, OperationStatus.completed)
+      XCTAssertEqual(operation3.stage, OperationStage.completed)
       completed3 = true;
     }
     
     operation2.addDependency(operation1)
     operation3.addDependency(operation2)
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation3, operation2, operation1]) { (success, results, errors) -> Void in
       XCTAssertTrue(completed1)
@@ -180,9 +175,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     XCTAssertFalse(completed3)
     XCTAssertFalse(completed)
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
+    self.waitForExpectations(timeout: 30.0, handler: nil)
     
     XCTAssertEqual(manager.operations.count, 0)
     
@@ -197,23 +190,23 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     let operation = SampleDataOperation()
     XCTAssertNotNil(operation)
-    XCTAssertEqual(operation.status, OperationStatus.Created)
+    XCTAssertEqual(operation.status, OperationStatus.created)
     
     var completed:Bool = false
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation]) { (success, results, errors) -> Void in
       XCTAssertFalse(success)
       XCTAssertNil(errors)
       XCTAssertFalse(completed)
       XCTAssertEqual(results.count, 0)
-      XCTAssertEqual(operation.status, OperationStatus.Cancelled)
+      XCTAssertEqual(operation.status, OperationStatus.cancelled)
       completed = true
       expct.fulfill()
     }
     
-    dispatch_async(dispatch_get_main_queue()) {
+    DispatchQueue.main.async {
       operation.cancel()
     }
     
@@ -221,29 +214,26 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     XCTAssertFalse(completed)
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
-    
+    self.waitForExpectations(timeout: 30.0, handler: nil)
     XCTAssertTrue(completed)
     
   }
   
   func testOperationBreakingWithError() {
     
-    enum TestErrors:ErrorType {
-      case TestErrorWithParam(param:Int)
+    enum TestErrors:Error {
+      case testErrorWithParam(param:Int)
     }
     
     let manager:DataRetrievalOperationManager = DataRetrievalOperationManager(remote:"http://jsonplaceholder.typicode.com")
     
     let operation = SampleDataOperation()
     XCTAssertNotNil(operation)
-    XCTAssertEqual(operation.status, OperationStatus.Created)
+    XCTAssertEqual(operation.status, OperationStatus.created)
     
     var completed:Bool = false
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation]) { (success, results, errors) -> Void in
       XCTAssertFalse(success)
@@ -251,7 +241,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       XCTAssertEqual(errors?.count, 1)
       if let error = errors?.last {
         switch error {
-        case TestErrors.TestErrorWithParam(let param):
+        case TestErrors.testErrorWithParam(let param):
           XCTAssertEqual(param, 999)
           default:
           XCTAssert(false, "TestErrors.TestErrorWithParam(999) expected!")
@@ -260,7 +250,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
         XCTAssert(false, "Error expected!")
       }
       XCTAssertEqual(results.count, 0)
-      XCTAssertEqual(operation.status, OperationStatus.Error)
+      XCTAssertEqual(operation.status, OperationStatus.error)
       completed = true
       expct.fulfill()
     }
@@ -268,17 +258,16 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     XCTAssertEqual(manager.operations.count, 2)
     
-    dispatch_async(dispatch_get_main_queue()) {
-      operation.breakWithError(TestErrors.TestErrorWithParam(param: 999))
+    DispatchQueue.main.async {
+      operation.breakWithError(TestErrors.testErrorWithParam(param: 999))
     }
     
     
     XCTAssertFalse(completed)
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
-    XCTAssertEqual(operation.status, OperationStatus.Error)
+    self.waitForExpectations(timeout: 30.0, handler: nil)
+    
+    XCTAssertEqual(operation.status, OperationStatus.error)
     XCTAssertTrue(completed)
     
   }
@@ -296,26 +285,26 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     var completed:Bool = false
     
     operation1.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
-      XCTAssertEqual(operation1.status, OperationStatus.Error)
+      XCTAssertEqual(operation3.status, OperationStatus.queued)
+      XCTAssertEqual(operation1.status, OperationStatus.error)
       completed1 = true;
     }
     
     operation2.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Queued)
-      XCTAssertEqual(operation2.status, OperationStatus.Completed)
+      XCTAssertEqual(operation3.status, OperationStatus.queued)
+      XCTAssertEqual(operation2.status, OperationStatus.completed)
       completed2 = true;
     }
     
     operation3.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation3.status, OperationStatus.Cancelled)
+      XCTAssertEqual(operation3.status, OperationStatus.cancelled)
       completed3 = true;
     }
     
     operation3.addDependency(operation1)
     operation3.addDependency(operation2)
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation3, operation2, operation1]) { (success, results, errors) -> Void in
       XCTAssertTrue(completed1)
@@ -339,13 +328,11 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     XCTAssertFalse(completed3)
     XCTAssertFalse(completed)
     
-    dispatch_async(dispatch_get_main_queue()) {
+    DispatchQueue.main.async {
       operation1.breakWithError(NSError(domain: "TestErrorDomain", code: 999, userInfo: nil))
     }
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
+    self.waitForExpectations(timeout: 30.0, handler: nil)
     
     XCTAssertEqual(manager.operations.count, 0)
     
@@ -368,19 +355,19 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     var completed:Bool = false
     
     operation1.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation1.status, OperationStatus.Error)
+      XCTAssertEqual(operation1.status, OperationStatus.error)
       completed1 = true;
     }
     
     operation2.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation2.status, OperationStatus.Completed)
+      XCTAssertEqual(operation2.status, OperationStatus.completed)
       completed2 = true;
     }
     
     operation3.completionBlock =  { (Void) -> Void in
-      XCTAssertEqual(operation1.status, OperationStatus.Error)
-      XCTAssertEqual(operation2.status, OperationStatus.Completed)
-      XCTAssertEqual(operation3.status, OperationStatus.Completed)
+      XCTAssertEqual(operation1.status, OperationStatus.error)
+      XCTAssertEqual(operation2.status, OperationStatus.completed)
+      XCTAssertEqual(operation3.status, OperationStatus.completed)
       completed3 = true;
     }
     
@@ -389,7 +376,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     operation3.addDependency(operation1)
     operation3.addDependency(operation2)
     
-    let expct:XCTestExpectation = self.expectationWithDescription("Awaiting request")
+    let expct:XCTestExpectation = self.expectation(description: "Awaiting request")
     
     manager.addOperations([operation3, operation2, operation1]) { (success, results, errors) -> Void in
       XCTAssertTrue(completed1)
@@ -403,9 +390,9 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       XCTAssertGreaterThan(results.count, 1)
       XCTAssertEqual(manager.operations.count, 0)
       
-      XCTAssertEqual(operation1.status, OperationStatus.Error)
-      XCTAssertEqual(operation2.status, OperationStatus.Completed)
-      XCTAssertEqual(operation3.status, OperationStatus.Completed)
+      XCTAssertEqual(operation1.status, OperationStatus.error)
+      XCTAssertEqual(operation2.status, OperationStatus.completed)
+      XCTAssertEqual(operation3.status, OperationStatus.completed)
       
       completed = true
       expct.fulfill()
@@ -418,13 +405,11 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     XCTAssertFalse(completed3)
     XCTAssertFalse(completed)
     
-    dispatch_async(dispatch_get_main_queue()) {
+    DispatchQueue.main.async {
       operation1.breakWithError(NSError(domain: "TestErrorDomain", code: 999, userInfo: nil))
     }
     
-    self.waitForExpectationsWithTimeout(30.0) { (error:NSError?) -> Void in
-      XCTAssertNil(error)
-    }
+    self.waitForExpectations(timeout: 30.0, handler: nil)
     
     XCTAssertEqual(manager.operations.count, 0)
     
@@ -445,9 +430,9 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     XCTAssertEqual(op1, op2)
     XCTAssertTrue([op2].contains(op1))
     
-    XCTAssertEqual(([op1, op2] as NSArray).indexOfObject(op2), 0)
-    XCTAssertEqual(([opNet, op1] as NSArray).indexOfObject(op2), 1)
-    XCTAssertEqual(([op1, op1] as NSArray).indexOfObject(opNet), NSNotFound)
+    XCTAssertEqual(([op1, op2] as NSArray).index(of: op2), 0)
+    XCTAssertEqual(([opNet, op1] as NSArray).index(of: op2), 1)
+    XCTAssertEqual(([op1, op1] as NSArray).index(of: opNet), NSNotFound)
     
     XCTAssertNotEqual(op1, opNet)
     let operationName = "Imortant"
@@ -470,9 +455,9 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     var op3Done = false
     var op2Done = false
     var op1Done = false
-    let op1Exp = expectationWithDescription("op1.cb.exp")
-    let op2Exp = expectationWithDescription("op2.cb.exp")
-    let op3Exp = expectationWithDescription("op3.cb.exp")
+    let op1Exp = expectation(description: "op1.cb.exp")
+    let op2Exp = expectation(description: "op2.cb.exp")
+    let op3Exp = expectation(description: "op3.cb.exp")
     
     op3.completionBlock = {
       op3Done = true
@@ -490,7 +475,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     let manager:DataRetrievalOperationManager = DataRetrievalOperationManager(remote:"http://jsonplaceholder.typicode.com")
     
     manager.suspended = true
-    let exp1 = expectationWithDescription("1")
+    let exp1 = expectation(description: "1")
     var comp1 = false
     manager.addOperations([op1]) { (success, results, errors) in
       comp1 = true
@@ -498,13 +483,13 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       exp1.fulfill()
     }
     
-    XCTAssertEqual(op1.status, OperationStatus.Queued)
+    XCTAssertEqual(op1.status, OperationStatus.queued)
 
     XCTAssertFalse(manager.operations.contains(op3))
     XCTAssertFalse(manager.operations.contains(op2))
     XCTAssertTrue(manager.operations.contains(op1))
     
-    let exp2 = expectationWithDescription("2")
+    let exp2 = expectation(description: "2")
 
     var comp2 = false
 
@@ -514,7 +499,7 @@ class DataRetrievalOperationManagerTests: XCTestCase {
       exp2.fulfill()
     }
     
-    XCTAssertEqual(op2.status, OperationStatus.Queued)
+    XCTAssertEqual(op2.status, OperationStatus.queued)
 
     
     XCTAssertTrue(manager.operations.contains(op3))
@@ -523,17 +508,17 @@ class DataRetrievalOperationManagerTests: XCTestCase {
     
     var comp13 = false
     
-    XCTAssertTrue((manager.operations as NSArray).containsObject(op2))
-    let exp13 = expectationWithDescription("13")
+    XCTAssertTrue((manager.operations as NSArray).contains(op2))
+    let exp13 = expectation(description: "13")
     manager.addOperations([op3, op1]) { (success, results, errors) in
       comp13 = true
       XCTAssertTrue(success)
       exp13.fulfill()
     }
     
-    XCTAssertEqual(op3.status, OperationStatus.Duplicate)
+    XCTAssertEqual(op3.status, OperationStatus.duplicate)
 
-    let exp123 = expectationWithDescription("123")
+    let exp123 = expectation(description: "123")
     var comp123 = false
     manager.addOperations([op3, op2, op1]) { (success, results, errors) in
       comp123 = true
@@ -543,14 +528,14 @@ class DataRetrievalOperationManagerTests: XCTestCase {
 
     
     manager.suspended = false
-    waitForExpectationsWithTimeout(900.0, handler: nil)
+    waitForExpectations(timeout: 900.0, handler: nil)
     XCTAssertTrue(comp1)
     XCTAssertTrue(comp2)
     XCTAssertTrue(comp13)
     XCTAssertTrue(comp123)
-    XCTAssertEqual(op3.status, OperationStatus.Completed)
-    XCTAssertEqual(op2.status, OperationStatus.Completed)
-    XCTAssertEqual(op1.status, OperationStatus.Completed)
+    XCTAssertEqual(op3.status, OperationStatus.completed)
+    XCTAssertEqual(op2.status, OperationStatus.completed)
+    XCTAssertEqual(op1.status, OperationStatus.completed)
     XCTAssertTrue(op3Done)
     XCTAssertTrue(op2Done)
     XCTAssertTrue(op1Done)
